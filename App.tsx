@@ -3,6 +3,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from './store/store';
 import { loadGame as loadGameAction } from './store/gameSlice';
 import { loadGame as loadGameFromStorage } from './services/storageService';
+import { useGameSfx } from './hooks/useGameSfx';
+import { playSound, stopSound } from './services/soundService';
 
 import NarrativePanel from './components/panels/NarrativePanel';
 import ChoicePanel from './components/panels/ChoicePanel';
@@ -12,17 +14,20 @@ import InventoryUI from './components/ui/InventoryUI';
 import CharacterSheetUI from './components/ui/CharacterSheetUI';
 import CharacterCreation from './components/CharacterCreation';
 import ChapterEndSummary from './components/ui/ChapterEndSummary';
-import CombatPanel from './components/panels/CombatPanel'; // NEW
-import JournalUI from './components/ui/JournalUI'; // NEW
-import CraftingUI from './components/ui/CraftingUI'; // NEW
+import CombatPanel from './components/panels/CombatPanel';
+import JournalUI from './components/ui/JournalUI';
+import CraftingUI from './components/ui/CraftingUI';
 
 const App: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { gameStarted, isLoading, isChapterEndModalOpen, isInCombat } = useSelector((state: RootState) => state.game);
     const [isInventoryOpen, setInventoryOpen] = useState(false);
     const [isSheetOpen, setSheetOpen] = useState(false);
-    const [isJournalOpen, setJournalOpen] = useState(false); // NEW
-    const [isCraftingOpen, setCraftingOpen] = useState(false); // NEW
+    const [isJournalOpen, setJournalOpen] = useState(false);
+    const [isCraftingOpen, setCraftingOpen] = useState(false);
+    
+    // Centralized sound effect hook
+    useGameSfx();
     
     useEffect(() => {
         const attemptLoad = async () => {
@@ -33,6 +38,31 @@ const App: React.FC = () => {
         };
         attemptLoad();
     }, [dispatch]);
+
+    // Effect for BGM and global clicks
+    useEffect(() => {
+        // Start BGM once the game has started (after character creation)
+        if (gameStarted) {
+            playSound('bgm', true);
+        }
+
+        // Add a global click listener for UI sound effects
+        const handleGlobalClick = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            // Only play for buttons that are NOT inside the choice-panel or combat-panel
+            if (target.closest('button') && !target.closest('.choice-panel') && !target.closest('.combat-panel')) {
+                playSound('ui_click');
+            }
+        };
+
+        window.addEventListener('click', handleGlobalClick);
+
+        // Cleanup function
+        return () => {
+            stopSound('bgm');
+            window.removeEventListener('click', handleGlobalClick);
+        };
+    }, [gameStarted]); // This effect runs when `gameStarted` changes.
 
     if (!gameStarted) {
         return <CharacterCreation />;

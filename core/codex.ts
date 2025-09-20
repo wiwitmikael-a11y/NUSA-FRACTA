@@ -1,6 +1,6 @@
 // core/codex.ts
 
-import { StoryEffect, Enemy, Recipe, Quest } from "../types";
+import { StoryEffect, Enemy, Recipe, Quest, Item } from "../types";
 
 interface ItemDetails {
   name: string;
@@ -8,9 +8,16 @@ interface ItemDetails {
   effects?: StoryEffect[]; 
 }
 
+interface BackgroundDetails {
+    name: string;
+    description: string;
+    effects: any[];
+    startingItems: Item[];
+}
+
 interface Codex {
   items: { [itemId: string]: ItemDetails; };
-  backgrounds: { [backgroundId: string]: { name: string; description: string; effects: any[] }; };
+  backgrounds: { [backgroundId: string]: BackgroundDetails; };
   skills: { [skillId: string]: { name: string; description: string; effects: any[] }; };
   enemies: { [enemyId: string]: Enemy; }; // NEW
   recipes: { [recipeId: string]: Recipe; }; // NEW
@@ -105,6 +112,7 @@ export const codex: Codex = {
         { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -1 },
         { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
       ],
+      startingItems: [{ itemId: 'komponen_elektronik', quantity: 2 }]
     },
     'mantan_tentara': {
       name: 'Mantan Tentara',
@@ -114,6 +122,7 @@ export const codex: Codex = {
         { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -1 },
         { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
       ],
+      startingItems: [{ itemId: 'makanan_kaleng', quantity: 1 }]
     },
     'teknisi_jalanan': {
       name: 'Teknisi Jalanan',
@@ -123,6 +132,7 @@ export const codex: Codex = {
         { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -1 },
         { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
       ],
+      startingItems: [{ itemId: 'perkakas', quantity: 1 }]
     },
     'negosiator_pasar_gelap': {
         name: 'Negosiator Pasar Gelap',
@@ -132,6 +142,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -1 },
             { type: 'ATTRIBUTE_MOD', key: 'ketangkasan', value: -1 },
         ],
+        startingItems: [{ itemId: 'air_minum', quantity: 2 }]
     },
     'kurir_cepat': {
         name: 'Kurir Cepat',
@@ -141,6 +152,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -1 },
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -1 },
         ],
+        startingItems: [{ itemId: 'makanan_ringan', quantity: 1 }]
     },
     'pustakawan_kiamat': {
         name: 'Pustakawan Kiamat',
@@ -149,6 +161,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: 2 },
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -2 },
         ],
+        startingItems: [{ itemId: 'peta_usang', quantity: 1 }]
     },
     'pengawal_pribadi': {
         name: 'Pengawal Pribadi',
@@ -157,6 +170,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: 2 },
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -2 },
         ],
+        startingItems: [{ itemId: 'perban', quantity: 1 }]
     },
     'kultis_puing': {
         name: 'Kultis Puing',
@@ -165,6 +179,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'karisma', value: 2 },
             { type: 'ATTRIBUTE_MOD', key: 'ketangkasan', value: -2 },
         ],
+        startingItems: [{ itemId: 'makanan_basi', quantity: 1 }]
     },
     'seniman_grafiti': {
         name: 'Seniman Grafiti',
@@ -175,6 +190,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -1 },
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -1 },
         ],
+        startingItems: [{ itemId: 'air_minum', quantity: 1 }]
     },
     'petani_hidroponik': {
         name: 'Petani Hidroponik',
@@ -185,6 +201,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'ketangkasan', value: -1 },
             { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
         ],
+        startingItems: [{ itemId: 'makanan_kaleng', quantity: 1 }]
     }
   },
   skills: {

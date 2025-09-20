@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store/store';
 import { startGame, setPlayerCharacter } from '../store/gameSlice';
 import { codex } from '../core/codex';
+import { initializeAudio } from '../services/soundService';
 
 const CharacterCreation: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -24,6 +25,9 @@ const CharacterCreation: React.FC = () => {
             alert('Silakan pilih keahlian karakter Anda.');
             return;
         }
+        
+        // Unlock the audio context on the first user gesture.
+        initializeAudio();
         
         // Set player data first
         dispatch(setPlayerCharacter({ name: name.trim(), backgroundId: background, skillId: skill }));

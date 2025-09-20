@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 import { makeChoice } from '../../store/gameSlice';
 import { ChapterNodeChoice, ChoiceCondition, Player, ItemId, SkillId, AttributeId } from '../../types';
+import { playSound } from '../../services/soundService';
 
 const checkConditions = (player: Player, conditions: ChoiceCondition[]): boolean => {
     return conditions.every(condition => {
@@ -48,6 +49,7 @@ const ChoicePanel: React.FC = () => {
     };
 
     const handleChoiceClick = (choice: ChapterNodeChoice) => {
+        playSound('choice_confirm');
         dispatch(makeChoice(choice));
     };
 

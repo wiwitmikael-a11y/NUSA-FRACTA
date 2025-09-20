@@ -31,7 +31,7 @@ const CraftingUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
                     {Object.values(codex.recipes).map((recipe, index) => {
                         const isCraftable = canCraft(recipe);
                         const ingredientText = recipe.ingredients
-                            .map(ing => `${codex.items[ing.itemId].name} (x${ing.quantity})`)
+                            .map(ing => `${codex.items[ing.itemId]?.name || ing.itemId} (x${ing.quantity})`)
                             .join(', ');
 
                         return (

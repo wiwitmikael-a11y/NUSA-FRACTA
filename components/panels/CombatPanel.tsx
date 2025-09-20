@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 import { attack, flee } from '../../store/gameSlice';
 import { codex } from '../../core/codex';
+import { playSound } from '../../services/soundService';
 
 const CombatPanel: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -11,7 +12,24 @@ const CombatPanel: React.FC = () => {
     if (!currentEnemyId) return null;
     
     const enemy = codex.enemies[currentEnemyId];
+    
+    if (!enemy) {
+        console.error(`Error: Enemy with ID "${currentEnemyId}" not found in codex.`);
+        // Render nothing to prevent a crash if enemy data is missing.
+        return null;
+    }
+
     const enemyHpPercentage = (enemyCurrentHp / enemy.hp) * 100;
+
+    const handleAttack = () => {
+        playSound('ui_click');
+        dispatch(attack());
+    }
+
+    const handleFlee = () => {
+        playSound('ui_click');
+        dispatch(flee());
+    }
     
     return (
         <div className="panel combat-panel">
@@ -24,13 +42,13 @@ const CombatPanel: React.FC = () => {
             </div>
             <ul>
                 <li>
-                    <button onClick={() => dispatch(attack())}>Serang</button>
+                    <button onClick={handleAttack}>Serang</button>
                 </li>
                 {/* <li>
                     <button disabled>Gunakan Item</button>
                 </li> */}
                 <li>
-                    <button onClick={() => dispatch(flee())}>Kabur</button>
+                    <button onClick={handleFlee}>Kabur</button>
                 </li>
             </ul>
         </div>

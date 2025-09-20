@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { initialGameState } from '../core/worldState';
 import { applyEffects } from '../core/gameRules';
 // FIX: Added StoryEffect to the import to correctly type victoryEffects.
-import { GameState, ChapterNodeChoice, PlayerAttributes, ItemId, AttributeId, EnemyId, Recipe, SkillId, StoryEffect } from '../types';
+import { GameState, ChapterNodeChoice, PlayerAttributes, ItemId, AttributeId, EnemyId, Recipe, SkillId, StoryEffect, Item } from '../types';
 import { loadGame as loadGameFromStorage, saveGame as saveGameToStorage } from '../services/storageService';
 import { codex } from '../core/codex';
 import { chapter1 } from '../core/story';
@@ -27,13 +27,26 @@ const gameSlice = createSlice({
             state.player.attributes = { kekuatan: 5, ketangkasan: 5, kecerdasan: 5, karisma: 5 };
 
             const background = codex.backgrounds[action.payload.backgroundId];
-            if (background?.effects) {
+            if (background) {
+                // Apply attribute mods
                 background.effects.forEach(effect => {
                     if (effect.type === 'ATTRIBUTE_MOD') {
                         const key = effect.key as keyof PlayerAttributes;
                         state.player.attributes[key] += effect.value;
                     }
                 });
+
+                // Add starting items
+                if (background.startingItems) {
+                    background.startingItems.forEach((startItem: Item) => {
+                        const existingItem = state.player.inventory.find(i => i.itemId === startItem.itemId);
+                        if (existingItem) {
+                            existingItem.quantity += startItem.quantity;
+                        } else {
+                            state.player.inventory.push({ ...startItem });
+                        }
+                    });
+                }
             }
         },
         startGame: (state) => {
@@ -81,7 +94,15 @@ const gameSlice = createSlice({
         // --- NEW COMBAT REDUCERS ---
         attack: (state) => {
             if (!state.isInCombat || !state.currentEnemyId) return;
+            
             const enemy = codex.enemies[state.currentEnemyId];
+            if (!enemy) {
+                console.error(`Enemy with id "${state.currentEnemyId}" not found in codex during attack.`);
+                addCombatLog(state, 'Terjadi kesalahan: Musuh tidak ditemukan.', 'info');
+                state.isInCombat = false;
+                state.currentEnemyId = null;
+                return;
+            }
             
             // Player attacks enemy
             const playerDamage = Math.max(1, state.player.attributes.kekuatan - enemy.defense);
@@ -114,7 +135,16 @@ const gameSlice = createSlice({
         },
         flee: (state) => {
             if (!state.isInCombat || !state.currentEnemyId) return;
+            
             const enemy = codex.enemies[state.currentEnemyId];
+            if (!enemy) {
+                console.error(`Enemy with id "${state.currentEnemyId}" not found in codex during flee.`);
+                addCombatLog(state, 'Terjadi kesalahan: Musuh tidak ditemukan.', 'info');
+                state.isInCombat = false;
+                state.currentEnemyId = null;
+                return;
+            }
+
             const fleeChance = 0.5 + (state.player.attributes.ketangkasan - 5) * 0.05;
 
             if (Math.random() < fleeChance) {
