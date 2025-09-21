@@ -13,6 +13,7 @@ interface BackgroundDetails {
     description: string;
     effects: any[];
     startingItems: Item[];
+    portraitUrl: string;
 }
 
 interface Codex {
@@ -23,6 +24,8 @@ interface Codex {
   recipes: { [recipeId: string]: Recipe; }; // NEW
   quests: { [questId: string]: Quest; }; // NEW
 }
+
+const ASSET_BASE_URL = 'https://storage.googleapis.com/nusa-fracta-assets';
 
 export const codex: Codex = {
   items: {
@@ -112,7 +115,8 @@ export const codex: Codex = {
         { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -1 },
         { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
       ],
-      startingItems: [{ itemId: 'komponen_elektronik', quantity: 2 }]
+      startingItems: [{ itemId: 'komponen_elektronik', quantity: 2 }],
+      portraitUrl: `${ASSET_BASE_URL}/Player/player_pemulung.png`
     },
     'mantan_tentara': {
       name: 'Mantan Tentara',
@@ -122,7 +126,8 @@ export const codex: Codex = {
         { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -1 },
         { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
       ],
-      startingItems: [{ itemId: 'makanan_kaleng', quantity: 1 }]
+      startingItems: [{ itemId: 'makanan_kaleng', quantity: 1 }],
+      portraitUrl: `${ASSET_BASE_URL}/Player/player_mantan_tentara.png`
     },
     'teknisi_jalanan': {
       name: 'Teknisi Jalanan',
@@ -132,7 +137,8 @@ export const codex: Codex = {
         { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -1 },
         { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
       ],
-      startingItems: [{ itemId: 'perkakas', quantity: 1 }]
+      startingItems: [{ itemId: 'perkakas', quantity: 1 }],
+      portraitUrl: `${ASSET_BASE_URL}/Player/player_teknisi_jalanan.png`
     },
     'negosiator_pasar_gelap': {
         name: 'Negosiator Pasar Gelap',
@@ -142,7 +148,8 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -1 },
             { type: 'ATTRIBUTE_MOD', key: 'ketangkasan', value: -1 },
         ],
-        startingItems: [{ itemId: 'air_minum', quantity: 2 }]
+        startingItems: [{ itemId: 'air_minum', quantity: 2 }],
+        portraitUrl: `${ASSET_BASE_URL}/Player/player_negosiator_pasar_gelap.png`
     },
     'kurir_cepat': {
         name: 'Kurir Cepat',
@@ -152,7 +159,8 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -1 },
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -1 },
         ],
-        startingItems: [{ itemId: 'makanan_ringan', quantity: 1 }]
+        startingItems: [{ itemId: 'makanan_ringan', quantity: 1 }],
+        portraitUrl: `${ASSET_BASE_URL}/Player/player_kurir_cepat.png`
     },
     'pustakawan_kiamat': {
         name: 'Pustakawan Kiamat',
@@ -161,7 +169,8 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: 2 },
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -2 },
         ],
-        startingItems: [{ itemId: 'peta_usang', quantity: 1 }]
+        startingItems: [{ itemId: 'peta_usang', quantity: 1 }],
+        portraitUrl: `${ASSET_BASE_URL}/Player/player_pustakawan_kiamat.png`
     },
     'pengawal_pribadi': {
         name: 'Pengawal Pribadi',
@@ -170,7 +179,8 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: 2 },
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -2 },
         ],
-        startingItems: [{ itemId: 'perban', quantity: 1 }]
+        startingItems: [{ itemId: 'perban', quantity: 1 }],
+        portraitUrl: `${ASSET_BASE_URL}/Player/player_pengawal_pribadi.png`
     },
     'kultis_puing': {
         name: 'Kultis Puing',
@@ -179,7 +189,8 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'karisma', value: 2 },
             { type: 'ATTRIBUTE_MOD', key: 'ketangkasan', value: -2 },
         ],
-        startingItems: [{ itemId: 'makanan_basi', quantity: 1 }]
+        startingItems: [{ itemId: 'makanan_basi', quantity: 1 }],
+        portraitUrl: `${ASSET_BASE_URL}/Player/player_kultis_puing.png`
     },
     'seniman_grafiti': {
         name: 'Seniman Grafiti',
@@ -190,7 +201,8 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -1 },
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -1 },
         ],
-        startingItems: [{ itemId: 'air_minum', quantity: 1 }]
+        startingItems: [{ itemId: 'air_minum', quantity: 1 }],
+        portraitUrl: `${ASSET_BASE_URL}/Player/player_seniman_grafiti.png`
     },
     'petani_hidroponik': {
         name: 'Petani Hidroponik',
@@ -201,7 +213,8 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'ketangkasan', value: -1 },
             { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
         ],
-        startingItems: [{ itemId: 'makanan_kaleng', quantity: 1 }]
+        startingItems: [{ itemId: 'makanan_kaleng', quantity: 1 }],
+        portraitUrl: `${ASSET_BASE_URL}/Player/player_petani_hidroponik.png`
     }
   },
   skills: {
@@ -259,6 +272,16 @@ export const codex: Codex = {
   enemies: {
       'penjarah_golok': { name: 'Penjarah Bergolok', hp: 35, attack: 10, defense: 2, xp_reward: 25 },
       'penjarah_pipa': { name: 'Penjarah Pipa', hp: 30, attack: 8, defense: 4, xp_reward: 20 },
+      // NEW: Added Raider enemies
+      'raider_pemula': { name: 'Raider Pemula', hp: 40, attack: 12, defense: 5, xp_reward: 30 },
+      'raider_ganas': { name: 'Raider Ganas', hp: 55, attack: 15, defense: 3, xp_reward: 45 },
+      'raider_veteran': { name: 'Raider Veteran', hp: 65, attack: 14, defense: 8, xp_reward: 60 },
+      // NEW: Added Anomaly enemies
+      'anomali_brainrot': { name: 'Anomali Brainrot', hp: 25, attack: 18, defense: 1, xp_reward: 35 },
+      'anomali_fungus': { name: 'Anomali Jamur', hp: 70, attack: 10, defense: 10, xp_reward: 55 },
+      'anomali_kumbang': { name: 'Anomali Kumbang Lapis Baja', hp: 50, attack: 12, defense: 15, xp_reward: 45 },
+      'anomali_tengkorak': { name: 'Anomali Tengkorak', hp: 30, attack: 10, defense: 2, xp_reward: 25 },
+      'ratu_anomali': { name: 'Ratu Anomali', hp: 150, attack: 25, defense: 12, xp_reward: 200 },
   },
   recipes: {
       'medkit_rakitan': {

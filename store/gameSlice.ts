@@ -28,6 +28,9 @@ const gameSlice = createSlice({
 
             const background = codex.backgrounds[action.payload.backgroundId];
             if (background) {
+                // Set portrait
+                state.player.portraitUrl = background.portraitUrl;
+                
                 // Apply attribute mods
                 background.effects.forEach(effect => {
                     if (effect.type === 'ATTRIBUTE_MOD') {

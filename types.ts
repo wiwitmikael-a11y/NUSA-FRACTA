@@ -4,7 +4,7 @@ import { codex } from './core/codex';
 export type ItemId = keyof typeof codex.items;
 export type SkillId = keyof typeof codex.skills;
 export type EnemyId = keyof typeof codex.enemies;
-export type FactionId = 'sisa_kemanusiaan' | 'gerombolan_besi' | 'teknokrat';
+export type FactionId = 'sisa_kemanusiaan' | 'gerombolan_besi' | 'teknokrat' | 'geng_bangsat' | 'pemburu_agraris' | 'republik_merdeka' | 'saudagar_jalanan' | 'sekte_pustaka';
 export type AttributeId = 'kekuatan' | 'ketangkasan' | 'kecerdasan' | 'karisma';
 export type StoryEffectType = 'CHANGE_HP' | 'ADD_ITEM' | 'REMOVE_ITEM' | 'CHANGE_REPUTATION' | 'ADD_XP' | 'SET_FLAG' | 'START_COMBAT';
 export type ConditionType = 'ATTRIBUTE' | 'HAS_ITEM' | 'HAS_SKILL';
@@ -43,6 +43,7 @@ export interface Player {
   attributes: PlayerAttributes;
   backgroundId: string | null;
   skillId: SkillId | null;
+  portraitUrl: string | null;
 }
 
 export interface ChoiceCondition {
@@ -71,6 +72,7 @@ export interface ChapterNode {
   choices: ChapterNodeChoice[];
   location: string;
   effects?: StoryEffect[];
+  imageUrl?: string;
 }
 
 export interface Chapter {

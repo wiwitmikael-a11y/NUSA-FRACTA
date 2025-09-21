@@ -17,6 +17,7 @@ import ChapterEndSummary from './components/ui/ChapterEndSummary';
 import CombatPanel from './components/panels/CombatPanel';
 import JournalUI from './components/ui/JournalUI';
 import CraftingUI from './components/ui/CraftingUI';
+import ImagePanel from './components/panels/ImagePanel';
 
 const App: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -81,6 +82,7 @@ const App: React.FC = () => {
             </header>
             
             <main className="game-world">
+                <ImagePanel />
                 <NarrativePanel />
                 <SidePanel />
                 {isInCombat ? <CombatPanel /> : <ChoicePanel />}

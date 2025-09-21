@@ -10,6 +10,7 @@ export const chapter1: Chapter = {
             nodeId: "awal_sudirman",
             narrative: "Debu dan keheningan menyelimuti Jalan Sudirman. Rangka-rangka gedung pencakar langit yang hangus mencakar langit kelabu. Kamu baru saja memanjat keluar dari stasiun MRT Dukuh Atas yang pengap, dan udara malam yang tercemar terasa menusuk paru-paru. Sekitar seratus meter di depan, di dekat bangkai Monumen Selamat Datang, kelip api unggun memecah kegelapan. Di sebelah kirimu, pintu kaca sebuah gedung perkantoran modern tampak pecah, menganga seperti mulut gua yang gelap.",
             location: "Jalan Jenderal Sudirman",
+            imageUrl: "https://i.ibb.co/rfnL19L/sudirman-ruins.png",
             choices: [
                 { text: "Mendekati api unggun dengan hati-hati.", targetNodeId: "mendekati_api_unggun", effects: [] },
                 { text: "Menyelidiki gedung perkantoran yang gelap.", targetNodeId: "masuki_lobi_gedung", effects: [] },
@@ -21,6 +22,7 @@ export const chapter1: Chapter = {
             nodeId: "mendekati_api_unggun",
             narrative: "Kamu melangkah perlahan, memanfaatkan bangkai mobil sebagai perlindungan. Semakin dekat, kamu bisa melihat tiga sosok duduk mengelilingi api yang berasal dari tong sampah. Mereka mengenakan pakaian tambal sulam dan salah satunya memegang senapan rakitan. Mereka belum melihatmu. Kamu bisa mencoba menyapa mereka, atau mencari posisi yang lebih baik untuk mengamati.",
             location: "Sekitar Bundaran HI",
+            imageUrl: "https://i.ibb.co/y4pRF9J/campfire.png",
             choices: [
                 { text: "Keluar dari persembunyian dengan tangan terangkat, menunjukkan niat damai.", targetNodeId: "sapa_penjaga_api", effects: [] },
                 { text: "[Kecerdasan > 5] Mencari tempat lebih tinggi untuk mengintai mereka dari jauh.", targetNodeId: "intai_dari_jpo", condition: [{ type: 'ATTRIBUTE', key: 'kecerdasan', value: 6 }], effects: [{ type: 'ADD_XP', key: 'intel', value: 5 }] }
@@ -117,6 +119,7 @@ export const chapter1: Chapter = {
             nodeId: "masuki_lobi_gedung",
             narrative: "Kamu melangkahi pecahan kaca dan masuk ke dalam lobi yang megah namun hancur. Kegelapan pekat menyelimutimu. Udara di dalam terasa dingin dan berbau apak. Di tengah lobi, ada meja resepsionis marmer yang terbalik. Di belakangnya ada pintu keamanan yang tertutup rapat. Tangga darurat di sudut ruangan tampak bisa diakses.",
             location: "Lobi Gedung Perkantoran",
+            imageUrl: "https://i.ibb.co/2Z5hSgR/office-lobby.png",
             choices: [
                 { text: "Periksa area meja resepsionis untuk mencari sesuatu yang berguna.", targetNodeId: "periksa_resepsionis", effects: [] },
                 { text: "Langsung menuju tangga darurat untuk naik ke lantai atas.", targetNodeId: "naik_tangga_lantai2", effects: [] }
@@ -256,6 +259,7 @@ export const chapter1: Chapter = {
              nodeId: "atap_gedung",
              narrative: "Pintu menuju atap terbuka dengan derit. Angin malam meniup wajahmu. Dari sini, kamu bisa melihat seluruh bentangan Sudirman yang gelap, hanya diterangi oleh kilat sesekali di kejauhan dan beberapa api unggun yang tersebar. Pemandangan ini memberimu gambaran yang lebih baik tentang dunia yang hancur ini.",
              location: "Atap Gedung",
+             imageUrl: "https://i.ibb.co/3WqPzKN/rooftop-view.png",
              choices: [
                  { text: "Turun dan kembali ke Davina.", targetNodeId: "kembali_ke_davina", effects: [{ type: 'ADD_XP', key: 'exploration', value: 15 }] }
              ]

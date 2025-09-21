@@ -10,15 +10,22 @@ const StatusHUD: React.FC = () => {
 
     return (
         <div className="status-hud">
-            <div className="player-name">{player.name} | Lvl {player.level}</div>
-            <div className="hud-bars">
-                <div className="hp-bar-container">
-                    <div className="hp-bar" style={{ width: `${hpPercentage}%` }}></div>
-                    <div className="hp-text">{player.hp} / {player.maxHp} HP</div>
+            {player.portraitUrl && (
+                <div className="player-portrait">
+                    <img src={player.portraitUrl} alt="Player Portrait" />
                 </div>
-                <div className="xp-bar-container">
-                    <div className="xp-bar" style={{ width: `${xpPercentage}%` }}></div>
-                    <div className="xp-text">{player.xp} / {nextLevelXp} XP</div>
+            )}
+            <div className="player-info">
+                <div className="player-name">{player.name} | Lvl {player.level}</div>
+                <div className="hud-bars">
+                    <div className="hp-bar-container">
+                        <div className="hp-bar" style={{ width: `${hpPercentage}%` }}></div>
+                        <div className="hp-text">{player.hp} / {player.maxHp} HP</div>
+                    </div>
+                    <div className="xp-bar-container">
+                        <div className="xp-bar" style={{ width: `${xpPercentage}%` }}></div>
+                        <div className="xp-text">{player.xp} / {nextLevelXp} XP</div>
+                    </div>
                 </div>
             </div>
         </div>
