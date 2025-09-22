@@ -192,6 +192,15 @@ const CharacterCreation: React.FC = () => {
                 )}
 
                 <button type="submit" className="submit-button">Mulai Petualangan</button>
+                
+                <div className="disclaimer-container">
+                    <p className="disclaimer-text">
+                        Game ini adalah karya fiksi. Nama, karakter, tempat, dan insiden adalah produk imajinasi penulis atau digunakan secara fiktif. Kemiripan dengan orang, hidup atau mati, atau peristiwa nyata adalah kebetulan semata.
+                    </p>
+                    <p className="copyright-text">
+                        © 2025 Rangga X Atharrazka Core
+                    </p>
+                </div>
             </form>
         </div>
     );
