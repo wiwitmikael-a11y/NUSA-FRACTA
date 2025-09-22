@@ -93,14 +93,10 @@
 
     .game-world {
       flex-grow: 1;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1.6fr 1fr; /* Top row taller for image/narrative */
+      display: flex;
+      flex-direction: column;
       gap: 1rem;
       overflow: hidden;
-      grid-template-areas:
-        "image narrative"
-        "side choice";
     }
 
     .panel {
@@ -111,14 +107,32 @@
       overflow-y: auto;
       backdrop-filter: blur(5px);
       box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      flex-shrink: 0; /* Prevent panels from shrinking by default */
     }
     
-    /* NEW: Image Panel Styles */
+    /* NEW LAYOUT: Image Panel is a row */
     .image-panel {
-        grid-area: image;
+        flex-basis: 45%; /* Takes a significant portion of height */
+        flex-grow: 1;
         padding: 0;
         position: relative;
-        overflow: hidden; /* Ensure image border-radius is respected */
+        overflow: hidden;
+    }
+    .image-panel::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100%;
+        height: 100%;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
+        background: repeating-linear-gradient(
+            transparent,
+            transparent 2px,
+            rgba(0, 0, 0, 0.15) 3px,
+            rgba(0, 0, 0, 0.15) 4px
+        );
+        pointer-events: none;
+        opacity: 0.8;
     }
     .image-panel.placeholder {
         background: repeating-linear-gradient(
@@ -150,33 +164,45 @@
         align-items: center;
         background-color: rgba(0,0,0,0.5);
     }
-    
-    /* Panel Grid Assignments */
-    .narrative-panel { grid-area: narrative; }
-    .side-panel { 
-        grid-area: side; 
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    .choice-panel, .combat-panel { grid-area: choice; }
 
+    /* NEW LAYOUT: Mid-section for Narrative and Choice */
+    .mid-section {
+      display: grid;
+      grid-template-columns: 2fr 1fr; /* 2/3 for narrative, 1/3 for choice */
+      gap: 1rem;
+      flex-basis: 35%;
+      flex-grow: 1;
+      overflow: hidden;
+    }
+    
+    .mid-section .panel {
+      height: 100%;
+    }
+
+    /* NEW LAYOUT: Side panel is a bottom row */
+    .side-panel {
+      flex-basis: 10%;
+      flex-shrink: 1;
+      min-height: 80px; /* Give it a minimum height */
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
     /* Component Styles */
     .narrative-panel p {
-        font-size: 1.1rem; /* Slightly smaller to fit layout */
+        font-size: 1.1rem;
         line-height: 1.6;
         white-space: pre-wrap;
     }
     
-    /* UPDATED HUD */
     .status-hud {
       display: flex;
       align-items: center;
-      gap: 1.5rem; /* Increased gap */
+      gap: 1.5rem;
       width: 100%;
       flex-grow: 1;
     }
-    /* NEW */
     .player-portrait {
         flex-shrink: 0;
         width: 60px;
@@ -192,13 +218,12 @@
         height: 100%;
         object-fit: cover;
     }
-    /* NEW */
     .player-info {
         flex-grow: 1;
         display: flex;
         flex-direction: column;
         gap: 4px;
-        min-width: 0; /* Prevents flexbox overflow */
+        min-width: 0;
     }
     .player-name {
         font-family: var(--font-heading);
@@ -224,121 +249,83 @@
       height: 14px;
       position: relative;
     }
-    .hp-bar {
-        background: linear-gradient(90deg, #b91c1c, #ef4444);
+    .hp-bar, .xp-bar {
         height: 100%;
         border-radius: 3px;
         transition: width 0.5s ease-in-out;
     }
-    .xp-bar {
-        background: linear-gradient(90deg, #ca8a04, #facc15);
-        height: 100%;
-        border-radius: 3px;
-        transition: width 0.5s ease-in-out;
-    }
+    .hp-bar { background: linear-gradient(90deg, #b91c1c, #ef4444); }
+    .xp-bar { background: linear-gradient(90deg, #ca8a04, #facc15); }
+
     .hp-text, .xp-text {
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-align: center;
-        margin: 0;
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        line-height: 14px;
-        color: var(--text-primary);
-        text-shadow: 1px 1px 1px #000;
+        font-size: 0.75rem; font-weight: 600; text-align: center; margin: 0;
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        line-height: 14px; color: var(--text-primary); text-shadow: 1px 1px 1px #000;
     }
 
-    .choice-panel ul, .combat-panel ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
+    .choice-panel ul {
+        list-style: none; padding: 0; margin: 0; display: flex;
+        flex-direction: column; gap: 0.75rem;
     }
     
     button, .submit-button, .action-button {
-      background-color: transparent;
-      border: 1px solid var(--accent-color);
-      color: var(--accent-color);
-      padding: 0.75rem 1.5rem;
-      font-family: var(--font-body);
-      font-size: 1rem;
-      font-weight: 600;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: all 0.2s ease-in-out;
-      text-align: left;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
+      background-color: transparent; border: 1px solid var(--accent-color); color: var(--accent-color);
+      padding: 0.75rem 1.5rem; font-family: var(--font-body); font-size: 1rem; font-weight: 600;
+      border-radius: 5px; cursor: pointer; transition: all 0.2s ease-in-out; text-align: left;
+      display: inline-flex; align-items: center; gap: 0.5rem;
     }
 
     button:hover:not(:disabled) {
-      background-color: var(--accent-color);
-      color: var(--background-end);
+      background-color: var(--accent-color); color: var(--background-end);
       box-shadow: 0 0 10px var(--accent-color);
     }
-    
     button:disabled {
-        border-color: var(--text-secondary);
-        color: var(--text-secondary);
-        cursor: not-allowed;
-        opacity: 0.6;
+        border-color: var(--text-secondary); color: var(--text-secondary);
+        cursor: not-allowed; opacity: 0.6;
     }
-    
     button.choice-disabled::before {
-        content: '🔒';
-        display: inline-block;
-        margin-right: 0.5rem;
-        opacity: 0.7;
+        content: '🔒'; display: inline-block; margin-right: 0.5rem; opacity: 0.7;
     }
 
-    /* Loading Overlay */
     .loading-overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(0, 0, 0, 0.7);
-      display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
-      z-index: 1000; backdrop-filter: blur(5px);
+      background-color: rgba(0, 0, 0, 0.7); display: flex; flex-direction: column;
+      justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px);
     }
-    .spinner {
-      border: 4px solid rgba(255, 255, 255, 0.2);
-      border-left-color: var(--accent-color);
-      border-radius: 50%; width: 50px; height: 50px;
-      animation: spin 1s linear infinite;
+    .loading-overlay p { margin-bottom: 1rem; font-size: 1.2rem; font-family: var(--font-heading); color: var(--accent-color); }
+    
+    .progress-bar-container {
+      width: 80%;
+      max-width: 400px;
+      height: 10px;
+      background-color: var(--background-start);
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      overflow: hidden;
     }
-    .loading-overlay p { margin-top: 1rem; font-size: 1.2rem; font-family: var(--font-heading); color: var(--accent-color); }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-bar-fill {
+      height: 100%;
+      background-color: var(--accent-color);
+      border-radius: 4px;
+      transition: width 0.1s linear;
+    }
 
-    /* Modals */
     .modal-overlay {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
-        display: flex; justify-content: center; align-items: center;
-        z-index: 100;
+        display: flex; justify-content: center; align-items: center; z-index: 100;
     }
     .modal-content {
-        background: var(--background-end);
-        border: 1px solid var(--border-color);
-        padding: 2rem; border-radius: 8px;
-        width: 90%; max-width: 600px;
-        max-height: 80vh; overflow-y: auto;
-        position: relative;
+        background: var(--background-end); border: 1px solid var(--border-color);
+        padding: 2rem; border-radius: 8px; width: 90%; max-width: 600px;
+        max-height: 80vh; overflow-y: auto; position: relative;
     }
-    .close-button {
-        position: absolute; top: 1rem; right: 1rem;
-        padding: 0.5rem 0.8rem;
-    }
+    .close-button { position: absolute; top: 1rem; right: 1rem; padding: 0.5rem 0.8rem; }
     .modal-content h2 { font-family: var(--font-heading); color: var(--accent-color); }
 
-    /* Inventory & Character Sheet Specifics */
     .inventory-list, .character-sheet-grid, .reputation-list, .attributes-list, .journal-list, .crafting-list { list-style: none; padding: 0; }
     .inventory-list li, .attributes-list li, .reputation-list li, .journal-list li, .crafting-list li {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.75rem 0;
+      display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0;
       border-bottom: 1px solid var(--border-color);
     }
     .inventory-list li:last-child, .attributes-list li:last-child, .journal-list li:last-child, .crafting-list li:last-child { border-bottom: none; }
@@ -349,44 +336,27 @@
     
     .attributes-list .attr-name { text-transform: capitalize; }
     .attr-assign-button {
-        padding: 0.2rem 0.5rem;
-        font-size: 0.8rem;
-        min-width: 30px;
-        text-align: center;
-        margin-left: 1rem;
+        padding: 0.2rem 0.5rem; font-size: 0.8rem; min-width: 30px;
+        text-align: center; margin-left: 1rem;
     }
     .unspent-points-notice {
-        text-align: center;
-        background-color: var(--accent-color);
-        color: var(--background-end);
-        padding: 0.5rem;
-        border-radius: 4px;
-        font-weight: bold;
-        margin-bottom: 1rem;
+        text-align: center; background-color: var(--accent-color); color: var(--background-end);
+        padding: 0.5rem; border-radius: 4px; font-weight: bold; margin-bottom: 1rem;
     }
 
-    /* Side Panel Event Log */
     .event-log-container {
-      margin-top: 0.5rem;
-      border-top: 1px solid var(--border-color);
-      padding-top: 0.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+      margin-top: auto; /* Push to bottom */
+      border-top: 1px solid var(--border-color); padding-top: 0.5rem;
+      display: flex; flex-direction: column; gap: 0.25rem;
     }
-    .event-log-message {
-      font-size: 0.9rem;
-      animation: fadeIn 0.5s ease-out;
-    }
+    .event-log-message { font-size: 0.9rem; animation: fadeIn 0.5s ease-out; }
     .event-log-message.success { color: var(--color-success); }
     .event-log-message.danger { color: var(--color-danger); }
     .event-log-message.neutral { color: var(--text-secondary); }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Character Creation */
     .character-creation-container {
-        max-width: 600px; margin: 5rem auto;
-        padding: 2rem; background: var(--panel-background);
+        max-width: 600px; margin: 5rem auto; padding: 2rem; background: var(--panel-background);
         border: 1px solid var(--border-color); border-radius: 8px;
     }
     .character-creation-container h1 { font-family: var(--font-heading); color: var(--accent-color); text-align: center; }
@@ -400,31 +370,43 @@
     .form-group .description { font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem; }
     .submit-button { width: 100%; text-align: center; font-size: 1.2rem; }
     
-    /* Combat UI */
-    .combat-panel .enemy-status {
-      text-align: center;
-      margin-bottom: 1rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border-color);
+    /* NEW: Combat UI Overlay Styles */
+    .combat-overlay {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 1rem; pointer-events: none; /* Allows image to be base layer */
     }
-    .enemy-status h4 {
-        margin: 0 0 0.5rem 0;
-        font-family: var(--font-heading);
-        font-size: 1.2rem;
+    .enemy-status-overlay {
+      background: rgba(0,0,0,0.6); padding: 0.5rem 1rem; border-radius: 8px;
+      border: 1px solid var(--border-color); align-self: center;
+      min-width: 300px; max-width: 50%; text-align: center;
     }
-    .enemy-hp-bar-container {
-      width: 100%;
-      height: 10px;
-      background-color: rgba(0,0,0,0.3);
-      border-radius: 5px;
+    .enemy-status-overlay h4 { margin: 0 0 0.5rem 0; font-family: var(--font-heading); font-size: 1.2rem; }
+    .enemy-hp-bar-container { width: 100%; height: 10px; background-color: rgba(0,0,0,0.3); border-radius: 5px; }
+    .enemy-hp-bar { height: 100%; background: linear-gradient(90deg, #b91c1c, #ef4444); border-radius: 5px; transition: width 0.3s ease; }
+    .combat-actions-overlay {
+      display: flex; justify-content: center; gap: 1rem; pointer-events: auto; /* Buttons are clickable */
     }
-    .enemy-hp-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #b91c1c, #ef4444);
-      border-radius: 5px;
-      transition: width 0.3s ease;
+
+    /* NEW: Floating Combat Text Styles */
+    .floating-text-container {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none; overflow: hidden;
     }
-    
+    .floating-text {
+      position: absolute;
+      font-size: 1.5rem; font-weight: bold; font-family: var(--font-heading);
+      text-shadow: 2px 2px 3px rgba(0,0,0,0.8);
+      animation: floatUp 2s ease-out forwards;
+      white-space: nowrap;
+    }
+    .floating-text.player-damage { color: var(--color-danger); }
+    .floating-text.enemy-damage { color: #f2f2f2; }
+    @keyframes floatUp {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-80px); opacity: 0; }
+    }
+
     .combat-log-entry {
         padding: 0.2rem 0;
         border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -433,7 +415,6 @@
     .combat-log-entry.player-turn { color: var(--color-success); }
     .combat-log-entry.enemy-turn { color: var(--color-danger); }
     .combat-log-entry.info { color: var(--text-secondary); }
-
 
   </style>
   <script type="importmap">

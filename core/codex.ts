@@ -25,7 +25,7 @@ interface Codex {
   quests: { [questId: string]: Quest; }; // NEW
 }
 
-const ASSET_BASE_URL = 'https://storage.googleapis.com/nusa-fracta-assets';
+const PORTRAIT_BASE_URL = '/portraits';
 
 export const codex: Codex = {
   items: {
@@ -116,7 +116,7 @@ export const codex: Codex = {
         { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
       ],
       startingItems: [{ itemId: 'komponen_elektronik', quantity: 2 }],
-      portraitUrl: `${ASSET_BASE_URL}/Player/player_pemulung.png`
+      portraitUrl: `${PORTRAIT_BASE_URL}/player_pemulung.png`
     },
     'mantan_tentara': {
       name: 'Mantan Tentara',
@@ -127,7 +127,7 @@ export const codex: Codex = {
         { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
       ],
       startingItems: [{ itemId: 'makanan_kaleng', quantity: 1 }],
-      portraitUrl: `${ASSET_BASE_URL}/Player/player_mantan_tentara.png`
+      portraitUrl: `${PORTRAIT_BASE_URL}/player_mantan_tentara.png`
     },
     'teknisi_jalanan': {
       name: 'Teknisi Jalanan',
@@ -138,7 +138,7 @@ export const codex: Codex = {
         { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
       ],
       startingItems: [{ itemId: 'perkakas', quantity: 1 }],
-      portraitUrl: `${ASSET_BASE_URL}/Player/player_teknisi_jalanan.png`
+      portraitUrl: `${PORTRAIT_BASE_URL}/player_teknisi_jalanan.png`
     },
     'negosiator_pasar_gelap': {
         name: 'Negosiator Pasar Gelap',
@@ -149,7 +149,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'ketangkasan', value: -1 },
         ],
         startingItems: [{ itemId: 'air_minum', quantity: 2 }],
-        portraitUrl: `${ASSET_BASE_URL}/Player/player_negosiator_pasar_gelap.png`
+        portraitUrl: `${PORTRAIT_BASE_URL}/player_negosiator_pasar_gelap.png`
     },
     'kurir_cepat': {
         name: 'Kurir Cepat',
@@ -160,7 +160,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -1 },
         ],
         startingItems: [{ itemId: 'makanan_ringan', quantity: 1 }],
-        portraitUrl: `${ASSET_BASE_URL}/Player/player_kurir_cepat.png`
+        portraitUrl: `${PORTRAIT_BASE_URL}/player_kurir_cepat.png`
     },
     'pustakawan_kiamat': {
         name: 'Pustakawan Kiamat',
@@ -170,7 +170,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kekuatan', value: -2 },
         ],
         startingItems: [{ itemId: 'peta_usang', quantity: 1 }],
-        portraitUrl: `${ASSET_BASE_URL}/Player/player_pustakawan_kiamat.png`
+        portraitUrl: `${PORTRAIT_BASE_URL}/player_pustakawan_kiamat.png`
     },
     'pengawal_pribadi': {
         name: 'Pengawal Pribadi',
@@ -180,7 +180,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -2 },
         ],
         startingItems: [{ itemId: 'perban', quantity: 1 }],
-        portraitUrl: `${ASSET_BASE_URL}/Player/player_pengawal_pribadi.png`
+        portraitUrl: `${PORTRAIT_BASE_URL}/player_pengawal_pribadi.png`
     },
     'kultis_puing': {
         name: 'Kultis Puing',
@@ -190,7 +190,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'ketangkasan', value: -2 },
         ],
         startingItems: [{ itemId: 'makanan_basi', quantity: 1 }],
-        portraitUrl: `${ASSET_BASE_URL}/Player/player_kultis_puing.png`
+        portraitUrl: `${PORTRAIT_BASE_URL}/player_kultis_puing.png`
     },
     'seniman_grafiti': {
         name: 'Seniman Grafiti',
@@ -202,7 +202,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'kecerdasan', value: -1 },
         ],
         startingItems: [{ itemId: 'air_minum', quantity: 1 }],
-        portraitUrl: `${ASSET_BASE_URL}/Player/player_seniman_grafiti.png`
+        portraitUrl: `${PORTRAIT_BASE_URL}/player_seniman_grafiti.png`
     },
     'petani_hidroponik': {
         name: 'Petani Hidroponik',
@@ -214,7 +214,7 @@ export const codex: Codex = {
             { type: 'ATTRIBUTE_MOD', key: 'karisma', value: -1 },
         ],
         startingItems: [{ itemId: 'makanan_kaleng', quantity: 1 }],
-        portraitUrl: `${ASSET_BASE_URL}/Player/player_petani_hidroponik.png`
+        portraitUrl: `${PORTRAIT_BASE_URL}/player_petani_hidroponik.png`
     }
   },
   skills: {

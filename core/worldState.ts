@@ -32,7 +32,7 @@ export const initialGameState: GameState = {
   },
   currentChapter: null,
   currentNodeId: null,
-  currentLocation: 'Titik Awal',
+  currentLocation: 'Jalan Jenderal Sudirman',
   isLoading: false,
   gameStarted: false,
   error: null,

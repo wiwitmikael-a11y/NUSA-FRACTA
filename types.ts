@@ -72,7 +72,6 @@ export interface ChapterNode {
   choices: ChapterNodeChoice[];
   location: string;
   effects?: StoryEffect[];
-  imageUrl?: string;
 }
 
 export interface Chapter {
@@ -114,6 +113,7 @@ export interface GameState {
   eventLog: EventLogMessage[];
   isChapterEndModalOpen: boolean;
   isNarrativeComplete: boolean;
+  // REMOVED: Dynamic narrative from Gemini is no longer needed
   // NEW: Combat State
   isInCombat: boolean;
   currentEnemyId: EnemyId | null;

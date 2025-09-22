@@ -6,31 +6,39 @@ import { setNarrativeComplete } from '../../store/gameSlice';
 
 const NarrativePanel: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { currentChapter, currentNodeId, isLoading, isInCombat, combatLog, currentEnemyId } = useSelector((state: RootState) => state.game);
+    const { 
+        currentChapter, 
+        currentNodeId, 
+        isLoading, 
+        isInCombat, 
+        combatLog,
+        error
+    } = useSelector((state: RootState) => state.game);
     const panelRef = useRef<HTMLDivElement>(null);
 
     const currentNode = currentChapter?.nodes.find(node => node.nodeId === currentNodeId);
     
-    // Determine what text to show
+    // The narrative text now comes directly from the pre-generated chapter data.
     const narrativeText = isInCombat ? '' : (currentNode ? currentNode.narrative : 'Dunia hening sejenak...');
     
+    // This callback now simply signals that the typewriter effect for the static text is done.
     const handleTypingComplete = useCallback(() => {
-        if (!isInCombat) {
-            dispatch(setNarrativeComplete(true));
-        }
-    }, [dispatch, isInCombat]);
+        dispatch(setNarrativeComplete(true));
+    }, [dispatch]);
 
+    // The typewriter hook is now only used for the main narrative text.
     const displayedText = useTypewriter(narrativeText, 20, handleTypingComplete);
 
     useEffect(() => {
-        // Auto-scroll to bottom on new log entry
+        // Auto-scroll to bottom on new log entry or new text
         if (panelRef.current) {
             panelRef.current.scrollTop = panelRef.current.scrollHeight;
         }
-    }, [combatLog]);
+    }, [combatLog, displayedText]);
 
     const renderContent = () => {
-        if (isLoading) return <p>Merangkai takdir...</p>;
+        if (isLoading && !currentChapter) return <p>Membangun alur cerita bab baru...</p>;
+        if (error) return <p style={{color: 'var(--color-danger)'}}>Error: {error}</p>;
         
         if (isInCombat) {
             return (
@@ -57,7 +65,11 @@ const NarrativePanel: React.FC = () => {
             );
         }
 
-        return <p>{displayedText}</p>;
+        return (
+            <div>
+                <p>{displayedText}</p>
+            </div>
+        );
     };
 
     return (

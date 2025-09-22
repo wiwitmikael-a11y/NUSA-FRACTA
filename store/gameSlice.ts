@@ -1,13 +1,32 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { initialGameState } from '../core/worldState';
 import { applyEffects } from '../core/gameRules';
-// FIX: Added StoryEffect to the import to correctly type victoryEffects.
-import { GameState, ChapterNodeChoice, PlayerAttributes, ItemId, AttributeId, EnemyId, Recipe, SkillId, StoryEffect, Item } from '../types';
+import { GameState, ChapterNodeChoice, PlayerAttributes, ItemId, AttributeId, EnemyId, Recipe, SkillId, StoryEffect, Item, Chapter } from '../types';
 import { loadGame as loadGameFromStorage, saveGame as saveGameToStorage } from '../services/storageService';
 import { codex } from '../core/codex';
-import { chapter1 } from '../core/story';
+import { generateChapter } from '../services/geminiService';
+import { RootState } from './store';
 
 const PLAYER_ID = 'player1';
+
+// Async thunk for generating a chapter
+export const generateAndStartChapter = createAsyncThunk<
+    Chapter, // Return type
+    { title: string; objective: string }, // Argument type
+    { state: RootState } // ThunkApi config
+>(
+    'game/generateAndStartChapter',
+    async (premise, { getState, rejectWithValue }) => {
+        try {
+            const currentState = getState().game;
+            const chapter = await generateChapter(currentState, premise);
+            return chapter;
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
 
 // Helper for combat log
 let nextCombatLogId = 0;
@@ -28,18 +47,13 @@ const gameSlice = createSlice({
 
             const background = codex.backgrounds[action.payload.backgroundId];
             if (background) {
-                // Set portrait
                 state.player.portraitUrl = background.portraitUrl;
-                
-                // Apply attribute mods
                 background.effects.forEach(effect => {
                     if (effect.type === 'ATTRIBUTE_MOD') {
                         const key = effect.key as keyof PlayerAttributes;
                         state.player.attributes[key] += effect.value;
                     }
                 });
-
-                // Add starting items
                 if (background.startingItems) {
                     background.startingItems.forEach((startItem: Item) => {
                         const existingItem = state.player.inventory.find(i => i.itemId === startItem.itemId);
@@ -53,27 +67,18 @@ const gameSlice = createSlice({
             }
         },
         startGame: (state) => {
-            state.currentChapter = chapter1;
-            state.currentNodeId = chapter1.startNodeId;
-            const startNode = chapter1.nodes.find(n => n.nodeId === chapter1.startNodeId);
-            if (startNode) {
-                state.currentLocation = startNode.location;
-            }
             state.gameStarted = true;
-            state.isLoading = false;
-            state.isNarrativeComplete = false;
-            saveGameToStorage(PLAYER_ID, state);
+            // The actual chapter loading is now handled by the async thunk,
+            // which should be dispatched after this action.
         },
         makeChoice: (state, action: PayloadAction<ChapterNodeChoice>) => {
             if (!state.currentChapter || state.isInCombat) return;
             
-            state.isNarrativeComplete = false; // Reset narrative status
+            state.isNarrativeComplete = false;
             const choice = action.payload;
 
-            // This now returns the new state, so we pass it along.
             const newState = applyEffects({ ...state }, choice.effects);
             Object.assign(state, newState);
-
 
             const nextNode = state.currentChapter.nodes.find(n => n.nodeId === choice.targetNodeId);
 
@@ -87,51 +92,46 @@ const gameSlice = createSlice({
                 if (nextNode.isChapterEnd) {
                     state.isChapterEndModalOpen = true;
                 }
-            } else if (!state.isInCombat) { // Don't error if combat started
+            } else if (!state.isInCombat) {
                 console.error(`Invalid targetNodeId: ${choice.targetNodeId}`);
                 state.error = "Alur cerita rusak. Tidak dapat menemukan langkah selanjutnya.";
             }
 
             saveGameToStorage(PLAYER_ID, state);
         },
-        // --- NEW COMBAT REDUCERS ---
         attack: (state) => {
             if (!state.isInCombat || !state.currentEnemyId) return;
             
             const enemy = codex.enemies[state.currentEnemyId];
-            if (!enemy) {
-                console.error(`Enemy with id "${state.currentEnemyId}" not found in codex during attack.`);
-                addCombatLog(state, 'Terjadi kesalahan: Musuh tidak ditemukan.', 'info');
-                state.isInCombat = false;
-                state.currentEnemyId = null;
-                return;
-            }
+            if (!enemy) { return; }
             
-            // Player attacks enemy
             const playerDamage = Math.max(1, state.player.attributes.kekuatan - enemy.defense);
             state.enemyCurrentHp = Math.max(0, state.enemyCurrentHp - playerDamage);
             addCombatLog(state, `Kamu menyerang ${enemy.name} dan memberikan ${playerDamage} kerusakan.`, 'player');
 
             if (state.enemyCurrentHp <= 0) {
-                // VICTORY
                 addCombatLog(state, `${enemy.name} telah dikalahkan!`, 'info');
                 state.isInCombat = false;
                 state.currentEnemyId = null;
-                // apply victory effects
-                // FIX: Explicitly typed `victoryEffects` as StoryEffect[] to prevent TypeScript from widening the type of the 'type' property to string.
                 const victoryEffects: StoryEffect[] = [{ type: 'ADD_XP', key: 'combat_victory', value: enemy.xp_reward }];
                 const newState = applyEffects({ ...state }, victoryEffects);
                 Object.assign(state, newState);
             } else {
-                // Enemy attacks player
                 const enemyDamage = Math.max(1, enemy.attack - Math.floor(state.player.attributes.ketangkasan / 2));
                 state.player.hp = Math.max(0, state.player.hp - enemyDamage);
                 addCombatLog(state, `${enemy.name} menyerang dan kamu kehilangan ${enemyDamage} HP.`, 'enemy');
                 if (state.player.hp <= 0) {
-                    // DEFEAT
                     addCombatLog(state, 'Kamu telah dikalahkan...', 'info');
                     state.isInCombat = false;
-                    state.currentNodeId = 'akhir_bab_dirampok'; // Generic defeat node
+                    state.currentNodeId = 'kalah_dan_pingsan';
+                    const defeatNode = state.currentChapter?.nodes.find(n => n.nodeId === 'kalah_dan_pingsan');
+                    if (defeatNode) {
+                        state.currentLocation = defeatNode.location;
+                        if(defeatNode.effects) {
+                             const finalState = applyEffects({ ...state }, defeatNode.effects);
+                             Object.assign(state, finalState);
+                        }
+                    }
                 }
             }
             saveGameToStorage(PLAYER_ID, state);
@@ -140,13 +140,7 @@ const gameSlice = createSlice({
             if (!state.isInCombat || !state.currentEnemyId) return;
             
             const enemy = codex.enemies[state.currentEnemyId];
-            if (!enemy) {
-                console.error(`Enemy with id "${state.currentEnemyId}" not found in codex during flee.`);
-                addCombatLog(state, 'Terjadi kesalahan: Musuh tidak ditemukan.', 'info');
-                state.isInCombat = false;
-                state.currentEnemyId = null;
-                return;
-            }
+            if (!enemy) { return; }
 
             const fleeChance = 0.5 + (state.player.attributes.ketangkasan - 5) * 0.05;
 
@@ -156,26 +150,31 @@ const gameSlice = createSlice({
                 state.currentEnemyId = null;
             } else {
                 addCombatLog(state, 'Kamu gagal kabur!', 'player');
-                // Enemy gets a free hit
                 const enemyDamage = Math.max(1, enemy.attack - Math.floor(state.player.attributes.ketangkasan / 2));
                 state.player.hp = Math.max(0, state.player.hp - enemyDamage);
                 addCombatLog(state, `${enemy.name} menyerang dan kamu kehilangan ${enemyDamage} HP.`, 'enemy');
                  if (state.player.hp <= 0) {
                     addCombatLog(state, 'Kamu telah dikalahkan...', 'info');
                     state.isInCombat = false;
-                    state.currentNodeId = 'akhir_bab_dirampok';
+                    state.currentNodeId = 'kalah_dan_pingsan';
+                    const defeatNode = state.currentChapter?.nodes.find(n => n.nodeId === 'kalah_dan_pingsan');
+                    if (defeatNode) {
+                        state.currentLocation = defeatNode.location;
+                        if(defeatNode.effects) {
+                             const finalState = applyEffects({ ...state }, defeatNode.effects);
+                             Object.assign(state, finalState);
+                        }
+                    }
                 }
             }
             saveGameToStorage(PLAYER_ID, state);
         },
-        // --- END COMBAT REDUCERS ---
         useItem: (state, action: PayloadAction<ItemId>) => {
             const itemId = action.payload;
             const itemInCodex = codex.items[itemId];
             if (itemInCodex?.effects) {
                 const newState = applyEffects({ ...state }, itemInCodex.effects);
                 Object.assign(state, newState);
-
                 const itemInInventory = state.player.inventory.find(i => i.itemId === itemId);
                 if (itemInInventory) {
                     itemInInventory.quantity -= 1;
@@ -188,21 +187,17 @@ const gameSlice = createSlice({
         },
         craftItem: (state, action: PayloadAction<Recipe>) => {
             const recipe = action.payload;
-            // Double check if ingredients are sufficient
             const canCraft = recipe.ingredients.every(ing => {
                 const itemInInv = state.player.inventory.find(i => i.itemId === ing.itemId);
                 return itemInInv && itemInInv.quantity >= ing.quantity;
             });
 
             if (canCraft) {
-                // Remove ingredients
                 recipe.ingredients.forEach(ing => {
                     const itemInInv = state.player.inventory.find(i => i.itemId === ing.itemId)!;
                     itemInInv.quantity -= ing.quantity;
                 });
                 state.player.inventory = state.player.inventory.filter(i => i.quantity > 0);
-
-                // Add output item
                 const outputItem = state.player.inventory.find(i => i.itemId === recipe.output.itemId);
                 if (outputItem) {
                     outputItem.quantity += recipe.output.quantity;
@@ -213,9 +208,8 @@ const gameSlice = createSlice({
             }
         },
         assignAttributePoint: (state, action: PayloadAction<AttributeId>) => {
-            const attributeId = action.payload;
             if (state.player.unspentAttributePoints > 0) {
-                state.player.attributes[attributeId]++;
+                state.player.attributes[action.payload]++;
                 state.player.unspentAttributePoints--;
                 saveGameToStorage(PLAYER_ID, state);
             }
@@ -233,6 +227,29 @@ const gameSlice = createSlice({
             state.isNarrativeComplete = action.payload;
         }
     },
+    extraReducers: (builder) => {
+        builder
+            .addCase(generateAndStartChapter.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(generateAndStartChapter.fulfilled, (state, action) => {
+                const newChapter = action.payload;
+                state.currentChapter = newChapter;
+                state.currentNodeId = newChapter.startNodeId;
+                const startNode = newChapter.nodes.find(n => n.nodeId === newChapter.startNodeId);
+                if (startNode) {
+                    state.currentLocation = startNode.location;
+                }
+                state.isNarrativeComplete = false;
+                state.isLoading = false;
+                saveGameToStorage(PLAYER_ID, state);
+            })
+            .addCase(generateAndStartChapter.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            });
+    }
 });
 
 export const {
@@ -247,7 +264,7 @@ export const {
     closeChapterEndModal,
     loadGame,
     setLoading,
-    setNarrativeComplete
+    setNarrativeComplete,
 } = gameSlice.actions;
 
 export default gameSlice.reducer;
