@@ -181,6 +181,28 @@
         .narrative-panel p {
             white-space: pre-wrap;
         }
+        
+        .npc-encounter {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background-color: rgba(0,0,0,0.2);
+            border-left: 3px solid var(--accent-color);
+        }
+        .npc-encounter img {
+            width: 75px;
+            height: 75px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid var(--border-color);
+        }
+        .npc-encounter h4 {
+            margin: 0;
+            color: var(--text-color);
+        }
+
 
         .choice-panel ul {
             display: flex;
@@ -417,6 +439,8 @@
         }
         .floating-text.enemy-damage { color: white; }
         .floating-text.player-damage { color: var(--danger-color); }
+        .floating-text.critical { color: var(--accent-color-light); font-size: 2rem; }
+        .floating-text.dodge { color: lightblue; }
         @keyframes floatUp {
             0% { transform: translateY(0); opacity: 1; }
             100% { transform: translateY(-80px); opacity: 0; }

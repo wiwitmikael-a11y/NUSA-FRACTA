@@ -22,7 +22,8 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
         5.  **Struktur Bab**: Bab harus terdiri dari 5-8 node yang saling berhubungan. Node pertama harus 'start'. Salah satu node harus menjadi akhir dari bab (isChapterEnd: true).
         6.  **Lokasi**: Berikan nama lokasi yang deskriptif dan spesifik untuk setiap node, contoh: "Lobi Gedung Perkantoran Terbengkalai", "Gang Sempit di Belakang Plaza", "Stasiun MRT Bawah Tanah".
         7.  **Waktu**: Untuk setiap node, tentukan 'timeOfDay' (pagi, siang, sore, malam) untuk mengatur suasana.
-        8.  **Node ID**: nodeId harus berupa string pendek dan deskriptif (misal: 'start', 'lobi_investigasi', 'kabur_lewat_jendela').
+        8.  **Cek Atribut**: Sesekali, buat sebuah pilihan yang memerlukan cek atribut. Tulis teks pilihan dengan format: "[NamaAtribut NilaiMinimal+] Teks Pilihan". Contoh: "[Kekuatan 7+] Dobrak pintu yang terkunci." atau "[Karisma 6+] Coba bernegosiasi dengan penjaga.".
+        9.  **Node ID**: nodeId harus berupa string pendek dan deskriptif (misal: 'start', 'lobi_investigasi', 'kabur_lewat_jendela').
 
         Karakter Pemain Saat Ini:
         - Nama: ${player.name}
@@ -74,6 +75,18 @@ export const generateChapter = async (gameState: GameState, chapterDetails: { ti
                                             properties: {
                                                 text: { type: Type.STRING },
                                                 targetNodeId: { type: Type.STRING },
+                                                condition: { 
+                                                    type: Type.ARRAY,
+                                                    items: {
+                                                        type: Type.OBJECT,
+                                                        properties: {
+                                                            type: { type: Type.STRING },
+                                                            key: { type: Type.STRING },
+                                                            value: { type: Type.NUMBER },
+                                                        },
+                                                        required: ['type', 'key', 'value']
+                                                    }
+                                                }
                                             },
                                             required: ['text', 'targetNodeId']
                                         }

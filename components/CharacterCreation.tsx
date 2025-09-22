@@ -44,7 +44,7 @@ const CharacterCreation: React.FC = () => {
     const [background, setBackground] = useState('');
     const [skill, setSkill] = useState('');
 
-    const finalAttributes = useMemo(() => {
+    const displayAttributes = useMemo(() => {
         const baseAttributes: PlayerAttributes = { kekuatan: 5, ketangkasan: 5, kecerdasan: 5, karisma: 5 };
         
         if (background && codex.backgrounds[background]) {
@@ -70,28 +70,53 @@ const CharacterCreation: React.FC = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        let finalName = name.trim();
-        let finalBackground = background;
-        let finalSkill = skill;
-
-        // Randomisasi jika ada field yang kosong
-        if (finalName === '') {
-            finalName = randomNames[Math.floor(Math.random() * randomNames.length)];
-        }
-        if (finalBackground === '') {
+        // 1. Tentukan pilihan final (pilihan pengguna atau acak)
+        const finalName = name.trim() || randomNames[Math.floor(Math.random() * randomNames.length)];
+        
+        let finalBackgroundId = background;
+        if (finalBackgroundId === '') {
             const backgroundIds = Object.keys(codex.backgrounds);
-            finalBackground = backgroundIds[Math.floor(Math.random() * backgroundIds.length)];
+            finalBackgroundId = backgroundIds[Math.floor(Math.random() * backgroundIds.length)];
         }
-        if (finalSkill === '') {
+
+        let finalSkillId = skill;
+        if (finalSkillId === '') {
             const skillIds = Object.keys(codex.skills);
-            finalSkill = skillIds[Math.floor(Math.random() * skillIds.length)];
+            finalSkillId = skillIds[Math.floor(Math.random() * skillIds.length)];
+        }
+
+        // 2. Hitung ulang atribut berdasarkan pilihan final untuk memastikan konsistensi
+        const finalAttributes: PlayerAttributes = { kekuatan: 5, ketangkasan: 5, kecerdasan: 5, karisma: 5 };
+        
+        if (finalBackgroundId && codex.backgrounds[finalBackgroundId]) {
+            codex.backgrounds[finalBackgroundId].effects.forEach(effect => {
+                if (effect.type === 'ATTRIBUTE_MOD') {
+                    const key = effect.key as keyof PlayerAttributes;
+                    finalAttributes[key] += effect.value;
+                }
+            });
         }
         
-        dispatch(setPlayerCharacter({ name: finalName, backgroundId: finalBackground, skillId: finalSkill, attributes: finalAttributes }));
+        if (finalSkillId && codex.skills[finalSkillId]) {
+            codex.skills[finalSkillId].effects.forEach(effect => {
+                if (effect.type === 'ATTRIBUTE_MOD') {
+                    const key = effect.key as keyof PlayerAttributes;
+                    finalAttributes[key] += effect.value;
+                }
+            });
+        }
+
+        // 3. Kirim action dengan data yang benar dan konsisten
+        dispatch(setPlayerCharacter({ 
+            name: finalName, 
+            backgroundId: finalBackgroundId, 
+            skillId: finalSkillId, 
+            attributes: finalAttributes 
+        }));
         
         dispatch(startGame());
 
-        // Dispatch async thunk untuk menghasilkan bab pertama
+        // Kirim thunk async untuk menghasilkan bab pertama
         dispatch(generateAndStartChapter({
             title: "Gema di Sudirman",
             objective: "Kamu baru saja tiba di reruntuhan Jalan Sudirman. Tujuanmu adalah bertahan hidup, mencari petunjuk tentang apa yang terjadi pada dunia, dan menemukan tempat aman pertama."
@@ -154,7 +179,7 @@ const CharacterCreation: React.FC = () => {
                         <div className="stats-display">
                             <h4>Atribut Awal</h4>
                             <ul>
-                                {Object.entries(finalAttributes).map(([key, value]) => (
+                                {Object.entries(displayAttributes).map(([key, value]) => (
                                     <li key={key}>
                                         <span>{key}</span>
                                         <span className={`attr-value ${getAttributeValueClass(value)}`}>{value}</span>

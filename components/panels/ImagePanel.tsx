@@ -8,7 +8,7 @@ import { getImageUrlForLocation } from '../../services/assetService';
 interface FloatingText {
     id: number;
     text: string;
-    type: 'player-damage' | 'enemy-damage';
+    type: 'player-damage' | 'enemy-damage' | 'critical' | 'dodge';
     style: React.CSSProperties;
 }
 
@@ -24,25 +24,21 @@ const ImagePanel: React.FC = () => {
     } = useSelector((state: RootState) => state.game);
 
     const [imageUrl, setImageUrl] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false); // Default to false, loading is an event.
+    const [isLoading, setIsLoading] = useState(false);
     const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
     const prevCombatLogLength = useRef(combatLog.length);
 
-    // Logic for atmospheric overlay
     const overlayClass = useMemo(() => {
-        // Combat has the highest priority
         if (isInCombat) {
             return 'overlay-combat';
         }
 
         const lowerLocation = currentLocation.toLowerCase();
 
-        // Specific location keywords take precedence over time of day
         if (lowerLocation.includes('bawah tanah') || lowerLocation.includes('terowongan') || lowerLocation.includes('stasiun')) {
             return 'overlay-underground';
         }
 
-        // Time of day based overlays
         switch (currentTimeOfDay) {
             case 'pagi':
                 return 'overlay-morning';
@@ -52,7 +48,7 @@ const ImagePanel: React.FC = () => {
                 return 'overlay-night';
             case 'siang':
             default:
-                return ''; // No overlay during the day
+                return '';
         }
     }, [isInCombat, currentLocation, currentTimeOfDay]);
 
@@ -65,19 +61,28 @@ const ImagePanel: React.FC = () => {
         }
     }, [currentLocation, imageUrl]);
     
-    // Effect for floating combat text
     useEffect(() => {
         if (combatLog.length > prevCombatLogLength.current) {
-            const newLogEntry = combatLog[0]; // latest is at the start
-            const damageMatch = newLogEntry.message.match(/memberikan (\d+) kerusakan/);
-            const playerDamageMatch = newLogEntry.message.match(/kehilangan (\d+) HP/);
-
+            const newLogEntry = combatLog[0];
             let newText: Omit<FloatingText, 'id' | 'style'> | null = null;
             
-            if (damageMatch) { // Player hit enemy
-                newText = { text: `-${damageMatch[1]}`, type: 'enemy-damage' };
-            } else if (playerDamageMatch) { // Enemy hit player
-                newText = { text: `-${playerDamageMatch[1]}`, type: 'player-damage' };
+            switch(newLogEntry.type) {
+                case 'critical':
+                    const critDamageMatch = newLogEntry.message.match(/memberikan (\d+) kerusakan/);
+                    if(critDamageMatch) newText = { text: `KRITIS! -${critDamageMatch[1]}`, type: 'critical' };
+                    break;
+                case 'damage':
+                    const damageMatch = newLogEntry.message.match(/memberikan (\d+) kerusakan/);
+                    const playerDamageMatch = newLogEntry.message.match(/kehilangan (\d+) HP/);
+                    if (damageMatch) {
+                        newText = { text: `-${damageMatch[1]}`, type: 'enemy-damage' };
+                    } else if (playerDamageMatch) {
+                        newText = { text: `-${playerDamageMatch[1]}`, type: 'player-damage' };
+                    }
+                    break;
+                case 'dodge':
+                    newText = { text: 'Hindaran!', type: 'dodge' };
+                    break;
             }
 
             if (newText) {
@@ -86,15 +91,15 @@ const ImagePanel: React.FC = () => {
                     ...newText,
                     id,
                     style: {
-                        top: `${40 + Math.random() * 20}%`, // Randomize vertical position
-                        left: `${40 + Math.random() * 20}%`, // Randomize horizontal position
+                        top: `${40 + Math.random() * 20}%`,
+                        left: `${40 + Math.random() * 20}%`,
                     }
                 };
                 setFloatingTexts(current => [...current, newFloatingText]);
 
                 setTimeout(() => {
                     setFloatingTexts(current => current.filter(t => t.id !== id));
-                }, 1900); // Remove after animation ends
+                }, 1900);
             }
         }
         prevCombatLogLength.current = combatLog.length;
@@ -107,7 +112,7 @@ const ImagePanel: React.FC = () => {
 
     const handleImageError = () => {
         console.error(`Failed to load image for location: "${currentLocation}" at URL: ${imageUrl}`);
-        setIsLoading(false); // Stop loading spinner even if image fails.
+        setIsLoading(false);
     };
     
     const handleAttack = () => {
@@ -146,7 +151,6 @@ const ImagePanel: React.FC = () => {
 
     return (
         <div className="panel image-panel">
-            {/* Using key forces a remount on URL change, ensuring onLoad/onError fire reliably */}
             <img
                 key={imageUrl}
                 src={imageUrl}

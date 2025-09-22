@@ -12,33 +12,51 @@ const NarrativePanel: React.FC = () => {
         isLoading, 
         isInCombat, 
         combatLog,
-        error
+        error,
+        currentRandomEvent,
+        activeNpc,
     } = useSelector((state: RootState) => state.game);
     const panelRef = useRef<HTMLDivElement>(null);
 
     const currentNode = currentChapter?.nodes.find(node => node.nodeId === currentNodeId);
     
-    // The narrative text now comes directly from the pre-generated chapter data.
-    const narrativeText = isInCombat ? '' : (currentNode ? currentNode.narrative : 'Dunia hening sejenak...');
+    const narrativeText = 
+        currentRandomEvent ? currentRandomEvent.narrative :
+        isInCombat ? '' : 
+        (currentNode ? currentNode.narrative : 'Dunia hening sejenak...');
     
-    // This callback now simply signals that the typewriter effect for the static text is done.
     const handleTypingComplete = useCallback(() => {
         dispatch(setNarrativeComplete(true));
     }, [dispatch]);
 
-    // The typewriter hook is now only used for the main narrative text.
     const displayedText = useTypewriter(narrativeText, 20, handleTypingComplete);
 
     useEffect(() => {
-        // Auto-scroll to bottom on new log entry or new text
         if (panelRef.current) {
             panelRef.current.scrollTop = panelRef.current.scrollHeight;
         }
-    }, [combatLog, displayedText]);
+    }, [combatLog, displayedText, activeNpc]);
 
     const renderContent = () => {
         if (isLoading && !currentChapter) return <p>Membangun alur cerita bab baru...</p>;
         if (error) return <p style={{color: 'var(--color-danger)'}}>Error: {error}</p>;
+
+        if (currentRandomEvent) {
+             return (
+                <div>
+                    {activeNpc && (
+                        <div className="npc-encounter">
+                            <img src={activeNpc.portraitUrl} alt={activeNpc.name} />
+                            <div>
+                                <small>Bertemu:</small>
+                                <h4>{activeNpc.name}</h4>
+                            </div>
+                        </div>
+                    )}
+                    <p>{displayedText}</p>
+                </div>
+            );
+        }
         
         if (isInCombat) {
             return (
@@ -52,7 +70,6 @@ const NarrativePanel: React.FC = () => {
             );
         }
 
-        // If combat just ended, show the final log before the next narrative.
         if (!isInCombat && currentNodeId === null && combatLog.length > 0) {
              return (
                 <div className="combat-log-container">

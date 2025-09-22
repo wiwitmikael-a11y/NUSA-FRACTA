@@ -4,7 +4,7 @@ import { RootState } from '../../store/store';
 import { EventLogMessage } from '../../types';
 
 const SidePanel: React.FC = () => {
-    const { currentLocation, eventLog } = useSelector((state: RootState) => state.game);
+    const { currentLocation, eventLog, player } = useSelector((state: RootState) => state.game);
     // State lokal ini akan menyimpan pesan log yang ingin kita tampilkan untuk sementara.
     const [displayLog, setDisplayLog] = useState<EventLogMessage[]>([]);
     
@@ -29,6 +29,7 @@ const SidePanel: React.FC = () => {
             <div>
               <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)', color: 'var(--accent-color)'}}>Informasi</h3>
                <p style={{ fontSize: '1.1rem', margin: '0.5rem 0 0 0' }}><strong>Lokasi:</strong> {currentLocation}</p>
+               <p style={{ fontSize: '1.1rem', margin: '0.25rem 0 0 0' }}><strong>Skrip:</strong> {player.skrip}</p>
             </div>
            
             {displayLog.length > 0 && (

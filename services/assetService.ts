@@ -1,5 +1,6 @@
 // services/assetService.ts
 import { assetManifest } from '../core/assetManifest';
+import { FactionId } from '../types';
 
 const BACKGROUND_BASE_URL = 'https://raw.githubusercontent.com/wiwitmikael-a11y/nusa-FRACTA-assets/main/backgrounds';
 const PORTRAIT_BASE_URL = 'https://raw.githubusercontent.com/wiwitmikael-a11y/nusa-FRACTA-assets/main/portraits';
@@ -122,10 +123,8 @@ const getRandomImage = (imageArray: string[]): string | null => {
 export const getImageUrlForLocation = (location: string): string | null => {
     let key: AssetKey | undefined = locationToAssetKey[location];
 
-    // Jika tidak ada kecocokan langsung, coba pencocokan berbasis kata kunci
     if (!key) {
         const lowerLocation = location.toLowerCase();
-        // Cari kata kunci yang paling spesifik terlebih dahulu
         const sortedKeywords = Object.keys(keywordToAssetKey).sort((a, b) => b.length - a.length);
         
         for (const keyword of sortedKeywords) {
@@ -145,7 +144,7 @@ export const getImageUrlForLocation = (location: string): string | null => {
     }
     
     console.warn(`No image asset key found for location: ${location}`);
-    return null; // Return null jika benar-benar tidak ada yang cocok
+    return null; 
 };
 
 export const getNpcImageUrl = (): string | null => {
@@ -156,4 +155,31 @@ export const getNpcImageUrl = (): string | null => {
     }
     console.warn(`Could not find a generic NPC image.`);
     return null;
+};
+
+export const getFactionImageUrl = (factionId: FactionId): string | null => {
+    const keyMap: Record<FactionId, keyof typeof assetManifest.factionPortraits> = {
+        'geng_bangsat': 'geng_bangsat',
+        'pemburu_agraria': 'pemburu_agraria',
+        'republik_merdeka': 'republik_merdeka',
+        'saudagar_jalanan': 'saudagar_jalanan',
+        'sekte_pustaka': 'sekte_pustaka',
+        // Tambahkan faksi lain jika ada di masa depan
+        'sisa_kemanusiaan': 'republik_merdeka', // Placeholder
+        'gerombolan_besi': 'geng_bangsat', // Placeholder
+        'teknokrat': 'sekte_pustaka', // Placeholder
+    };
+
+    const factionKey = keyMap[factionId];
+    if (factionKey && assetManifest.factionPortraits[factionKey]) {
+        const images = assetManifest.factionPortraits[factionKey];
+        const imageName = getRandomImage(images);
+        if (imageName) {
+            return `${PORTRAIT_BASE_URL}/${imageName}`;
+        }
+    }
+    
+    // Fallback to generic NPC if faction not found
+    console.warn(`Could not find image for faction: ${factionId}. Falling back to generic NPC.`);
+    return getNpcImageUrl();
 };

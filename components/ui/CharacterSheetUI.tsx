@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 import { codex } from '../../core/codex';
 import { AttributeId } from '../../types';
+import { increaseAttribute } from '../../store/gameSlice';
 
 const CharacterSheetUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
     const player = useSelector((state: RootState) => state.game.player);
@@ -16,9 +17,7 @@ const CharacterSheetUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
     
     const handleIncreaseAttribute = (attribute: AttributeId) => {
         if (player.unspentAttributePoints > 0) {
-            // Dispatch logic to increase an attribute would go here
-            console.log(`Increasing attribute: ${attribute}`);
-            // Example: dispatch(increaseAttribute(attribute));
+            dispatch(increaseAttribute(attribute));
         }
     };
 
@@ -28,8 +27,8 @@ const CharacterSheetUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
                 <h2>Lembar Karakter</h2>
                 <button onClick={onClose} className="close-button">X</button>
                 
-                <div className="sheet-header">
-                    {player.portraitUrl && <img src={player.portraitUrl} alt="Player Portrait" />}
+                <div className="sheet-header" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    {player.portraitUrl && <img src={player.portraitUrl} alt="Player Portrait" style={{ width: '100px', height: '100px', objectFit: 'cover', border: '2px solid var(--accent-color)' }} />}
                     <div className="header-info">
                         <h3>{player.name}</h3>
                         <p>Level {player.level}</p>
@@ -37,25 +36,30 @@ const CharacterSheetUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
                     </div>
                 </div>
 
-                <div className="sheet-section">
+                <div className="sheet-section" style={{ marginBottom: '1.5rem' }}>
                     <h4>Atribut</h4>
+                    {player.unspentAttributePoints > 0 && 
+                        <p className="points-available" style={{ color: 'var(--accent-color)'}}>
+                            Poin atribut tersedia: {player.unspentAttributePoints}
+                        </p>
+                    }
                     <ul>
                         {Object.entries(player.attributes).map(([key, value]) => (
                             <li key={key}>
                                 <span>{key.charAt(0).toUpperCase() + key.slice(1)}</span>
-                                <span>{value as number}</span>
-                                {player.unspentAttributePoints > 0 && (
-                                    <button 
-                                        className="increase-attr-btn"
-                                        onClick={() => handleIncreaseAttribute(key as AttributeId)}
-                                    >+</button>
-                                )}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span>{value as number}</span>
+                                    {player.unspentAttributePoints > 0 && (
+                                        <button 
+                                            className="increase-attr-btn"
+                                            onClick={() => handleIncreaseAttribute(key as AttributeId)}
+                                            title={`Tingkatkan ${key}`}
+                                        >+</button>
+                                    )}
+                                </div>
                             </li>
                         ))}
                     </ul>
-                    {player.unspentAttributePoints > 0 && 
-                        <p className="points-available">Poin atribut tersedia: {player.unspentAttributePoints}</p>
-                    }
                 </div>
 
                  <div className="sheet-section">

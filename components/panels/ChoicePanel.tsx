@@ -1,8 +1,8 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
-import { makeChoice, setLoading } from '../../store/gameSlice';
-import { ChapterNodeChoice, ChoiceCondition, Player, ItemId, SkillId, AttributeId } from '../../types';
+import { makeChoice, setLoading, resolveEventChoice } from '../../store/gameSlice';
+import { ChapterNodeChoice, ChoiceCondition, Player, ItemId, SkillId, AttributeId, RandomEventChoice } from '../../types';
 
 const checkConditions = (player: Player, conditions: ChoiceCondition[]): boolean => {
     return conditions.every(condition => {
@@ -16,6 +16,9 @@ const checkConditions = (player: Player, conditions: ChoiceCondition[]): boolean
         }
         if (condition.type === 'HAS_SKILL') {
             return player.skillId === condition.key;
+        }
+        if (condition.type === 'HAS_SKRIP') {
+            return player.skrip >= condition.value;
         }
         return true;
     });
@@ -32,35 +35,78 @@ const getConditionText = (conditions: ChoiceCondition[]): string => {
         if (condition.type === 'HAS_SKILL') {
             return `Butuh keahlian: ${condition.key}`;
         }
+        if (condition.type === 'HAS_SKRIP') {
+            return `Butuh ${condition.value} Skrip`;
+        }
         return '';
     }).join(', ');
 }
 
 const ChoicePanel: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { currentChapter, currentNodeId, player, isNarrativeComplete } = useSelector((state: RootState) => state.game);
+    const { 
+        currentChapter, 
+        currentNodeId, 
+        player, 
+        isNarrativeComplete,
+        currentRandomEvent 
+    } = useSelector((state: RootState) => state.game);
 
     const currentNode = currentChapter?.nodes.find(node => node.nodeId === currentNodeId);
 
-    const isChoiceDisabled = (choice: ChapterNodeChoice): boolean => {
+    const isChoiceDisabled = (choice: ChapterNodeChoice | RandomEventChoice): boolean => {
         if (!choice.condition || choice.condition.length === 0) return false;
         return !checkConditions(player, choice.condition);
     };
 
-    const handleChoiceClick = (choice: ChapterNodeChoice) => {
-        dispatch(setLoading(true)); // Tampilkan layar pemuatan.
+    const handleChapterChoiceClick = (choice: ChapterNodeChoice) => {
+        dispatch(setLoading(true));
         
-        // Proses pilihan dengan segera, ini akan memperbarui state untuk adegan berikutnya "di bawah" layar pemuatan.
-        dispatch(makeChoice(choice));
+        // Pilihan chapter memicu transisi layar pemuatan yang lebih panjang
+        setTimeout(() => {
+             dispatch(makeChoice(choice));
+        }, 500);
 
-        // Tahan layar pemuatan untuk durasi minimum untuk mensimulasikan pemrosesan dan mencegah spam-klik.
         setTimeout(() => {
             dispatch(setLoading(false));
-        }, 1500); // Penundaan 1.5 detik.
+        }, 1500);
     };
 
+    const handleEventChoiceClick = (choice: RandomEventChoice) => {
+        // Pilihan event diselesaikan dengan cepat tanpa layar pemuatan
+        dispatch(resolveEventChoice(choice));
+    };
+
+    if (currentRandomEvent) {
+        return (
+             <div className="panel choice-panel">
+                {isNarrativeComplete && (
+                    <ul>
+                        {currentRandomEvent.choices.map((choice, index) => {
+                             const disabled = isChoiceDisabled(choice);
+                             const title = disabled && choice.condition 
+                                ? getConditionText(choice.condition)
+                                : '';
+                            return (
+                                <li key={index}>
+                                    <button
+                                        onClick={() => handleEventChoiceClick(choice)}
+                                        disabled={disabled}
+                                        title={title}
+                                    >
+                                        {choice.text}
+                                    </button>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                )}
+             </div>
+        )
+    }
+
     if (!currentNode || currentNode.isChapterEnd) {
-        return <div className="panel choice-panel"></div>; // Hide choices on chapter end
+        return <div className="panel choice-panel"></div>;
     }
     
     if (currentNode.choices.length === 0) {
@@ -80,7 +126,7 @@ const ChoicePanel: React.FC = () => {
                         return (
                             <li key={index}>
                                 <button
-                                    onClick={() => handleChoiceClick(choice)}
+                                    onClick={() => handleChapterChoiceClick(choice)}
                                     disabled={disabled}
                                     title={title}
                                     className={disabled ? 'choice-disabled' : ''}

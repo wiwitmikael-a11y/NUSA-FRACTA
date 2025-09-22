@@ -2,7 +2,7 @@
 
 // --- ID Types ---
 export type AttributeId = 'kekuatan' | 'ketangkasan' | 'kecerdasan' | 'karisma';
-export type FactionId = 'sisa_kemanusiaan' | 'gerombolan_besi' | 'teknokrat' | 'geng_bangsat' | 'pemburu_agraris' | 'republik_merdeka' | 'saudagar_jalanan' | 'sekte_pustaka';
+export type FactionId = 'sisa_kemanusiaan' | 'gerombolan_besi' | 'teknokrat' | 'geng_bangsat' | 'pemburu_agraria' | 'republik_merdeka' | 'saudagar_jalanan' | 'sekte_pustaka';
 export type ItemId = string;
 export type SkillId = string;
 export type BackgroundId = string;
@@ -11,6 +11,7 @@ export type QuestId = string;
 export type NodeId = string;
 export type ChapterId = string;
 export type TimeOfDay = 'pagi' | 'siang' | 'sore' | 'malam';
+export type EquipmentSlot = 'meleeWeapon' | 'armor';
 
 // --- Player & Character ---
 export interface PlayerAttributes {
@@ -33,12 +34,14 @@ export interface Player {
   level: number;
   unspentAttributePoints: number;
   inventory: InventoryItem[];
+  equippedItems: Partial<Record<EquipmentSlot, ItemId>>;
   reputation: Record<FactionId, number>;
   storyFlags: Record<QuestId, boolean | number>;
   attributes: PlayerAttributes;
   backgroundId: BackgroundId | null;
   skillId: SkillId | null;
   portraitUrl: string | null;
+  skrip: number;
 }
 
 // --- Story & Narrative ---
@@ -50,7 +53,7 @@ export interface ChapterNodeChoice {
 }
 
 export interface ChoiceCondition {
-  type: 'ATTRIBUTE' | 'HAS_ITEM' | 'HAS_SKILL';
+  type: 'ATTRIBUTE' | 'HAS_ITEM' | 'HAS_SKILL' | 'HAS_SKRIP';
   key: AttributeId | ItemId | SkillId;
   value: number;
 }
@@ -78,6 +81,34 @@ export interface Chapter {
   nodes: ChapterNode[];
 }
 
+// --- Random Events ---
+export interface RandomEventEffect {
+    type: 'GAIN_ITEM' | 'LOSE_ITEM' | 'GAIN_XP' | 'CHANGE_HP' | 'CHANGE_REPUTATION' | 'START_COMBAT' | 'SET_FLAG' | 'NOTHING' | 'CHANGE_SKRIP';
+    key?: ItemId | FactionId | EnemyId | QuestId;
+    value?: number;
+    message: string;
+}
+
+export interface RandomEventChoice {
+  text: string;
+  condition?: ChoiceCondition[];
+  effects: RandomEventEffect[];
+}
+
+export interface RandomEvent {
+  id: string;
+  type: 'dialogue' | 'trade' | 'discovery' | 'threat';
+  triggerCondition?: (state: GameState) => boolean;
+  npc: {
+      name: string;
+      portraitKey: string;
+      faction?: FactionId;
+  };
+  narrative: string;
+  choices: RandomEventChoice[];
+}
+
+
 // --- Game State ---
 export interface GameState {
   player: Player;
@@ -96,6 +127,9 @@ export interface GameState {
   currentEnemyId: EnemyId | null;
   enemyCurrentHp: number;
   combatLog: CombatLogMessage[];
+  // Random Event State
+  currentRandomEvent: RandomEvent | null;
+  activeNpc: { name: string; portraitUrl: string } | null;
 }
 
 // --- UI & Events ---
@@ -106,9 +140,10 @@ export interface EventLogMessage {
 }
 
 export interface CombatLogMessage {
-  id: string;
+  id:string;
   message: string;
-  turn: 'player' | 'enemy';
+  turn: 'player' | 'enemy' | 'system'; // System for things like dodge/crit
+  type?: 'damage' | 'dodge' | 'critical';
 }
 
 
@@ -125,8 +160,10 @@ export interface Codex {
 export interface Item {
   name: string;
   description: string;
-  type: 'weapon' | 'consumable' | 'key' | 'material' | 'misc';
-  effects?: any; // Simplified for now
+  type: 'weapon' | 'consumable' | 'key' | 'material' | 'misc' | 'armor';
+  equipmentSlot?: EquipmentSlot;
+  effects?: Effect[];
+  value: number;
 }
 
 export interface Skill {
@@ -150,6 +187,7 @@ export interface Enemy {
   defense: number;
   xpValue: number;
   lootTable: { itemId: ItemId; chance: number; quantity: [number, number] }[];
+  skripDrop: [number, number];
 }
 
 export interface Recipe {
@@ -165,6 +203,6 @@ export interface Quest {
 
 export interface Effect {
   type: 'ATTRIBUTE_MOD' | 'SKILL_BONUS';
-  key: AttributeId | string;
+  key: AttributeId | 'melee_damage_bonus' | 'healing_effectiveness' | 'flee_chance_bonus' | 'xp_gain_bonus' | 'loot_find_bonus' | 'base_hp_bonus' | 'damage_resistance' | 'dodge_chance' | 'critical_hit_chance' | 'better_prices_bonus' | 'reputation_gain_bonus' | 'crafting_resource_saver_chance' | 'status_effect_resistance' | 'flat_damage_bonus';
   value: number;
 }

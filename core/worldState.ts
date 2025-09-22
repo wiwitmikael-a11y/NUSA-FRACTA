@@ -9,12 +9,13 @@ export const initialGameState: GameState = {
     level: 1,
     unspentAttributePoints: 1, // Start with 1 point
     inventory: [{ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'perban', quantity: 2}],
+    equippedItems: {},
     reputation: {
       'sisa_kemanusiaan': 0,
       'gerombolan_besi': 0,
       'teknokrat': 0,
       'geng_bangsat': 0,
-      'pemburu_agraris': 0,
+      'pemburu_agraria': 0,
       'republik_merdeka': 0,
       'saudagar_jalanan': 0,
       'sekte_pustaka': 0,
@@ -29,6 +30,7 @@ export const initialGameState: GameState = {
     backgroundId: null,
     skillId: null,
     portraitUrl: null,
+    skrip: 50,
   },
   currentChapter: null,
   currentNodeId: null,
@@ -45,4 +47,7 @@ export const initialGameState: GameState = {
   currentEnemyId: null,
   enemyCurrentHp: 0,
   combatLog: [],
+  // Random Event State
+  currentRandomEvent: null,
+  activeNpc: null,
 };

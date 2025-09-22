@@ -97,10 +97,76 @@ export const assetManifest = {
   },
   npcPortraits: {
     generic: [
-      'npc_generic_male_01.jpeg',
-      'npc_generic_female_01.jpeg',
-      'npc_scavenger_01.jpeg',
-      'npc_trader_01.jpeg',
+      'npc_warga_01.png',
+      'npc_warga_02.png',
+      'npc_warga_03.png',
+      'npc_warga_04.png',
+      'npc_warga_06.png',
+      'npc_warga_07.png',
+    ],
+    companions: [
+        'companion_ayra.png',
+        'companion_davina.png',
+        'companion_raizen.png',
     ],
   },
+  factionPortraits: {
+    geng_bangsat: [
+        'faksi_geng_bangsat_leader.png',
+        'faksi_geng_bangsat_01.png',
+        'faksi_geng_bangsat_02.png',
+        'faksi_geng_bangsat_03.png',
+        'faksi_geng_bangsat_04.png',
+    ],
+    pemburu_agraria: [
+        'faksi_pemburu_agraria_leader.png',
+        'faksi_pemburu_agraria_01.png',
+        'faksi_pemburu_agraria_02.png',
+        'faksi_pemburu_agraria_03.png',
+        'faksi_pemburu_agraria_04.png',
+        'faksi_pemburu_agraria_05.png',
+    ],
+    republik_merdeka: [
+        'faksi_republik_merdeka_leader.png',
+        'faksi_republik_merdeka_01.png',
+        'faksi_republik_merdeka_02.png',
+        'faksi_republik_merdeka_03.png',
+        'faksi_republik_merdeka_04.png',
+    ],
+    saudagar_jalanan: [
+        'faksi_saudagar_jalanan_01.png',
+        'faksi_saudagar_jalanan_02.png',
+        'faksi_saudagar_jalanan_03.png',
+        'faksi_saudagar_jalanan_04.png',
+    ],
+    sekte_pustaka: [
+        'faksi_sekte_pustaka_leader.png',
+        'faksi_sekte_pustaka_01.png',
+        'faksi_sekte_pustaka_02.png',
+        'faksi_sekte_pustaka_03.png',
+        'faksi_sekte_pustaka_04.png',
+        'faksi_sekte_pustaka_05.png',
+    ],
+  },
+  enemyPortraits: {
+      anomali: [
+          'musuh_anomali_brainrot_01.png',
+          'musuh_anomali_brainrot_02.png',
+          'musuh_anomali_brainrot_03.png',
+          'musuh_anomali_fungus_01.png',
+          'musuh_anomali_fungus_02.png',
+          'musuh_anomali_fungus_03.png',
+          'musuh_anomali_kumbang_01.png',
+          'musuh_anomali_queen.png',
+          'musuh_anomali_skull_01.png',
+          'musuh_anomali_skull_02.png',
+          'musuh_anomali_skull_03.png',
+          'musuh_anomali_skull_04.png',
+      ],
+      raider: [
+          'musuh_raider_01.png',
+          'musuh_raider_02.png',
+          'musuh_raider_03.png',
+      ]
+  }
 };
