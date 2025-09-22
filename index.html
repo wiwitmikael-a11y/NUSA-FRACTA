@@ -136,14 +136,14 @@
             overflow: hidden;
             padding: 0;
         }
-        .image-panel img {
+        .image-panel > img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             transition: opacity 0.5s ease-in-out;
             opacity: 0;
         }
-        .image-panel img.loaded {
+        .image-panel > img.loaded {
             opacity: 1;
         }
         
@@ -152,14 +152,16 @@
             top: 1rem;
             left: 1rem;
             background-color: rgba(0, 0, 0, 0.7);
-            padding: 0.25rem 0.75rem;
+            padding: 0.5rem 1rem;
             font-family: var(--font-heading);
-            font-size: 1rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
             border: 1px solid var(--border-color);
             border-left: 3px solid var(--accent-color);
             z-index: 5;
-            text-shadow: 1px 1px 2px black;
-            border-radius: 2px;
+            text-shadow: 2px 2px 4px black;
+            border-radius: 4px;
         }
         
         .atmospheric-overlay {

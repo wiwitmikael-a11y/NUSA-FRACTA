@@ -165,7 +165,11 @@ const ImagePanel: React.FC = () => {
     const enemy = currentEnemyId ? codex.enemies[currentEnemyId] : null;
     const enemyHpPercentage = (enemy && enemy.hp > 0) ? (enemyCurrentHp / enemy.hp) * 100 : 0;
     const playerHpPercentage = (player.maxHp > 0) ? (player.hp / player.maxHp) * 100 : 0;
-    const enemyImageUrl = currentEnemyId ? getEnemyImageUrl(currentEnemyId) : null;
+    
+    // FIX: Memoize the enemy image URL to prevent it from changing on re-renders during combat.
+    const enemyImageUrl = useMemo(() => {
+        return currentEnemyId ? getEnemyImageUrl(currentEnemyId) : null;
+    }, [currentEnemyId]);
 
 
     return (
