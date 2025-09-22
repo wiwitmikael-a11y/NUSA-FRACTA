@@ -332,6 +332,18 @@ export const codex: Codex = {
     'cari_air': {
         name: 'Sumber Air Bersih',
         description: 'Bertahan hidup butuh air. Kamu harus mencari sumber air minum yang aman di sekitar sini.',
+    },
+    'investigasi_sinyal': {
+        name: 'Investigasi Sinyal Aneh',
+        description: 'Sebuah sinyal radio lemah terdeteksi dari arah stasiun MRT. Cari tahu sumbernya.',
+    },
+    'tawaran_saudagar': {
+        name: 'Tawaran Saudagar',
+        description: 'Seorang saudagar menawarkan peta ke \'gudang aman\', tapi dia meminta bayaran yang tinggi. Putuskan apakah ini layak dipercaya.',
+    },
+    'bantu_republik': {
+        name: 'Bantu Patroli Republik',
+        description: 'Sebuah patroli Republik Merdeka meminta bantuanmu untuk membersihkan area dari perampok.',
     }
   }
 };

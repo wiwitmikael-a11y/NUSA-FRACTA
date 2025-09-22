@@ -70,7 +70,9 @@ const applyEffects = (state: GameState, effects: ChoiceEffect[]) => {
                     const itemInInv = state.player.inventory.find(i => i.itemId === effect.key);
                     if (itemInInv) {
                         itemInInv.quantity -= effect.value;
-                        state.player.inventory = state.player.inventory.filter(i => i.quantity > 0);
+                        if (itemInInv.quantity <= 0) { // Safety check before filtering
+                            state.player.inventory = state.player.inventory.filter(i => i.itemId !== effect.key);
+                        }
                         state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'info' });
                     }
                 }
@@ -267,42 +269,75 @@ const gameSlice = createSlice({
             }
         },
         makeChoice: (state, action: PayloadAction<ChapterNodeChoice>) => {
-            // Clear previous event state
             state.currentRandomEvent = null;
             state.activeNpc = null;
-
             const choice = action.payload;
 
-             // Terapkan efek dari pilihan
-            if (choice.effects) {
-                applyEffects(state, choice.effects);
+            // --- NEW: Probabilistic Attribute Check Logic ---
+            if (choice.check) {
+                const { attribute, difficulty } = choice.check;
+                const attributeValue = state.player.attributes[attribute];
+                // Simple d20 roll system. Modifier is (value - 5) / 2. E.g., 5=0, 7=+1, 9=+2
+                const modifier = Math.floor((attributeValue - 5) / 2);
+                const roll = Math.floor(Math.random() * 20) + 1;
+                const total = roll + modifier;
+                
+                if (total >= difficulty) {
+                    // --- SUCCESS ---
+                    state.eventLog.push({ id: `elog-${Date.now()}`, message: `(Berhasil) Cek ${attribute} berhasil! (Kamu: ${total}, Butuh: ${difficulty})`, type: 'reward' });
+                    if (choice.effects) {
+                        applyEffects(state, choice.effects);
+                    }
+                    // Move to the next node on success
+                     const nextNode = state.currentChapter?.nodes.find(node => node.nodeId === choice.targetNodeId);
+                     if (nextNode) {
+                        state.currentNodeId = nextNode.nodeId;
+                        state.currentLocation = nextNode.location;
+                        state.currentTimeOfDay = nextNode.timeOfDay || state.currentTimeOfDay;
+                        state.isNarrativeComplete = false;
+                        if (nextNode.isChapterEnd) {
+                            state.isChapterEndModalOpen = true;
+                        } else {
+                            triggerRandomEvent(state);
+                        }
+                    }
+                } else {
+                    // --- FAILURE ---
+                    state.eventLog.push({ id: `elog-${Date.now()}`, message: `(Gagal) Cek ${attribute} gagal. (Kamu: ${total}, Butuh: ${difficulty})`, type: 'danger' });
+                    if (choice.failureEffects) {
+                        applyEffects(state, choice.failureEffects);
+                    }
+                    // Stay on the current node on failure, but re-enable choices
+                    state.isNarrativeComplete = true; 
+                }
+            } else {
+                // --- Standard Choice Logic (No Check) ---
+                if (choice.effects) {
+                    applyEffects(state, choice.effects);
+                }
+                const nextNode = state.currentChapter?.nodes.find(node => node.nodeId === choice.targetNodeId);
+                if (nextNode) {
+                    state.currentNodeId = nextNode.nodeId;
+                    state.currentLocation = nextNode.location;
+                    state.currentTimeOfDay = nextNode.timeOfDay || state.currentTimeOfDay;
+                    state.isNarrativeComplete = false;
+                    if (nextNode.isChapterEnd) {
+                        state.isChapterEndModalOpen = true;
+                    } else {
+                        triggerRandomEvent(state);
+                    }
+                } else {
+                    state.error = `Pilihan salah: Tidak dapat menemukan node tujuan '${choice.targetNodeId}'.`;
+                }
             }
 
-            // Jika pilihan memulai pertarungan, jangan lanjutkan ke node berikutnya
+            // If combat was started by an effect, don't proceed further.
             if (state.isInCombat) {
                 state.isNarrativeComplete = true;
                 saveGame('player1', state);
                 return;
             }
 
-            const nextNode = state.currentChapter?.nodes.find(node => node.nodeId === choice.targetNodeId);
-
-            if (nextNode) {
-                state.currentNodeId = nextNode.nodeId;
-                state.currentLocation = nextNode.location;
-                state.currentTimeOfDay = nextNode.timeOfDay || state.currentTimeOfDay;
-                state.isNarrativeComplete = false;
-
-                if (nextNode.isChapterEnd) {
-                    state.isChapterEndModalOpen = true;
-                } else {
-                    // Check for random event after a successful choice
-                    triggerRandomEvent(state);
-                }
-            } else {
-                state.error = `Pilihan salah: Tidak dapat menemukan node tujuan '${choice.targetNodeId}'.`;
-            }
-             // Auto-save on every choice
             saveGame('player1', state);
         },
         resolveEventChoice: (state, action: PayloadAction<RandomEventChoice>) => {
@@ -330,7 +365,9 @@ const gameSlice = createSlice({
                             const itemInInv = state.player.inventory.find(i => i.itemId === effect.key);
                             if (itemInInv) {
                                 itemInInv.quantity -= effect.value;
-                                state.player.inventory = state.player.inventory.filter(i => i.quantity > 0);
+                                if (itemInInv.quantity <= 0) {
+                                    state.player.inventory = state.player.inventory.filter(i => i.itemId !== effect.key);
+                                }
                                 state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'info' });
                             }
                         }
@@ -346,15 +383,13 @@ const gameSlice = createSlice({
                              const factionId = effect.key as FactionId;
                              let repChange = effect.value;
 
-                             // Bonus Reputasi dari Karisma untuk gain positif
                              if (repChange > 0) {
                                 const charismaBonus = Math.floor((state.player.attributes.karisma - 5) / 2);
                                 repChange += charismaBonus;
-                                repChange = Math.max(1, repChange); // Pastikan minimal dapat 1
+                                repChange = Math.max(1, repChange); 
                              }
                              state.player.reputation[factionId] += repChange;
                              
-                             // Terapkan bonus reputasi dari keahlian
                             if (effect.value > 0 && state.player.skillId) {
                                 const skill = codex.skills[state.player.skillId];
                                 const repBonusEffect = skill?.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'reputation_gain_bonus');
@@ -384,12 +419,10 @@ const gameSlice = createSlice({
                 }
             });
 
-            // Jika pertarungan dimulai, jangan selesaikan event. Biarkan state combat mengambil alih.
-            // Event akan diselesaikan setelah combat berakhir.
             if (!combatStarted) {
                 state.currentRandomEvent = null;
                 state.activeNpc = null;
-                state.isNarrativeComplete = true; // Allow main story choices to appear again
+                state.isNarrativeComplete = true; 
             }
         },
         closeChapterEndModal: (state) => {
@@ -400,7 +433,6 @@ const gameSlice = createSlice({
 
             const enemy = codex.enemies[state.currentEnemyId];
             
-            // Player attacks
             const { damage: playerDamage, isCritical } = calculatePlayerDamage(state.player);
             state.enemyCurrentHp = Math.max(0, state.enemyCurrentHp - playerDamage);
             
@@ -411,11 +443,9 @@ const gameSlice = createSlice({
             }
 
             if (state.enemyCurrentHp <= 0) {
-                // Enemy defeated
                 state.isInCombat = false;
                 
                 let xpGained = enemy.xpValue;
-                 // Periksa bonus XP dari keahlian
                 if (state.player.skillId) {
                     const skill = codex.skills[state.player.skillId];
                     const xpBonusEffect = skill?.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'xp_gain_bonus');
@@ -427,14 +457,12 @@ const gameSlice = createSlice({
                 state.player.xp += xpGained;
                 state.eventLog.push({ id: `elog-${Date.now()}`, message: `Kamu mengalahkan ${enemy.name} dan mendapatkan ${xpGained} XP.`, type: 'reward' });
                 
-                // Skrip Drop
                 const skripGained = Math.floor(Math.random() * (enemy.skripDrop[1] - enemy.skripDrop[0] + 1)) + enemy.skripDrop[0];
                 if (skripGained > 0) {
                     state.player.skrip += skripGained;
                     state.eventLog.push({ id: `skrip-${Date.now()}`, message: `Kamu mendapatkan ${skripGained} Skrip.`, type: 'reward' });
                 }
 
-                // Loot system
                 enemy.lootTable.forEach(loot => {
                     if (Math.random() < loot.chance) {
                         const quantity = Math.floor(Math.random() * (loot.quantity[1] - loot.quantity[0] + 1)) + loot.quantity[0];
@@ -448,7 +476,6 @@ const gameSlice = createSlice({
                     }
                 });
 
-                // Periksa bonus loot tambahan dari keahlian
                 if (state.player.skillId) {
                     const skill = codex.skills[state.player.skillId];
                     const lootBonusEffect = skill?.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'loot_find_bonus');
@@ -474,23 +501,19 @@ const gameSlice = createSlice({
                 }
                 state.player = playerAfterLevelCheck;
 
-                // Jika combat berasal dari random event, selesaikan eventnya.
                 if (state.currentRandomEvent) {
                     state.currentRandomEvent = null;
                     state.activeNpc = null;
                 }
 
-                // Kembali ke mode narasi normal
                 state.currentEnemyId = null;
                 state.isNarrativeComplete = true; 
-                state.combatLog = []; // Bersihkan log pertarungan setelah menang
+                state.combatLog = []; 
 
                 saveGame('player1', state);
                 return;
             }
 
-            // Enemy attacks
-            // Cek dodge
             let dodgeChance = 0;
              if (state.player.skillId) {
                 const skill = codex.skills[state.player.skillId];
@@ -533,7 +556,6 @@ const gameSlice = createSlice({
                 state.combatLog = [];
                 state.currentEnemyId = null;
                 
-                // Jika kabur dari random event, selesaikan eventnya.
                 if (state.currentRandomEvent) {
                     state.currentRandomEvent = null;
                     state.activeNpc = null;
@@ -565,7 +587,6 @@ const gameSlice = createSlice({
             });
 
             if(hasIngredients) {
-                // Cek penghematan material dari keahlian
                 let resourcesSaved = false;
                 if (state.player.skillId) {
                     const skill = codex.skills[state.player.skillId];
@@ -582,7 +603,7 @@ const gameSlice = createSlice({
                             itemInInv.quantity -= ing.quantity;
                         }
                     });
-                    state.player.inventory = state.player.inventory.filter(i => i.quantity > 0);
+                     state.player.inventory = state.player.inventory.filter(i => i.quantity > 0);
                 }
                 
                 const existingResultItem = state.player.inventory.find(i => i.itemId === recipe.result.itemId);
@@ -646,7 +667,6 @@ const gameSlice = createSlice({
             const itemInInventory = state.player.inventory.find(i => i.itemId === itemId);
             if (!itemInInventory) return;
 
-            // Unequip item in the same slot if any
             const currentlyEquipped = state.player.equippedItems[slot];
             if (currentlyEquipped) {
                 const oldItem = state.player.inventory.find(i => i.itemId === currentlyEquipped);
@@ -657,17 +677,17 @@ const gameSlice = createSlice({
                 }
             }
 
-            // Equip the new item
             itemInInventory.quantity--;
             state.player.equippedItems[slot] = itemId;
-            state.player.inventory = state.player.inventory.filter(i => i.quantity > 0);
+            if (itemInInventory.quantity <= 0) {
+                state.player.inventory = state.player.inventory.filter(i => i.itemId !== itemId);
+            }
         },
         unequipItem: (state, action: PayloadAction<EquipmentSlot>) => {
             const slot = action.payload;
             const equippedItemId = state.player.equippedItems[slot];
             if (!equippedItemId) return;
 
-            // Add back to inventory
             const existingItem = state.player.inventory.find(i => i.itemId === equippedItemId);
             if (existingItem) {
                 existingItem.quantity++;
@@ -685,7 +705,7 @@ const gameSlice = createSlice({
                 state.error = null;
                 state.currentChapter = null;
                 state.currentNodeId = null;
-                state.eventLog = []; // Kosongkan log untuk bab baru
+                state.eventLog = []; 
             })
             .addCase(generateAndStartChapter.fulfilled, (state, action: PayloadAction<Chapter>) => {
                 state.currentChapter = action.payload;

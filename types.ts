@@ -49,7 +49,12 @@ export interface ChapterNodeChoice {
   text: string;
   targetNodeId: NodeId;
   condition?: ChoiceCondition[];
-  effects?: ChoiceEffect[];
+  effects?: ChoiceEffect[]; // For success or simple choices
+  check?: { // For probabilistic checks
+      attribute: AttributeId;
+      difficulty: number; // e.g., 12
+  };
+  failureEffects?: ChoiceEffect[]; // For when the check fails
 }
 
 export interface ChoiceCondition {

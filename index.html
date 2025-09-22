@@ -107,11 +107,12 @@
 
         .game-world {
             display: grid;
-            grid-template-rows: minmax(200px, 45vh) 1fr auto;
+            grid-template-rows: minmax(200px, 45vh) 1fr;
             gap: 0.5rem;
             padding: 0.5rem;
             flex-grow: 1;
             overflow: hidden;
+            position: relative;
         }
 
         .story-section {
@@ -144,6 +145,21 @@
         }
         .image-panel img.loaded {
             opacity: 1;
+        }
+        
+        .location-display {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 0.25rem 0.75rem;
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--accent-color);
+            z-index: 5;
+            text-shadow: 1px 1px 2px black;
+            border-radius: 2px;
         }
         
         .atmospheric-overlay {
@@ -203,7 +219,6 @@
             color: var(--text-color);
         }
 
-
         .choice-panel ul {
             display: flex;
             flex-direction: column;
@@ -216,6 +231,16 @@
         
         .side-panel {
             font-size: 0.9rem;
+            position: absolute;
+            bottom: 0.5rem;
+            right: 0.5rem;
+            width: 350px;
+            max-width: 40vw;
+            max-height: 40%;
+            z-index: 10;
+            background-color: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(5px);
+            border-radius: 4px;
         }
 
         .event-log-container {
@@ -455,13 +480,29 @@
             text-overflow: ellipsis;
             width: 100%;
         }
-        .combatant-hp-bar-container {
-            width: 100%;
-            height: 20px;
-            background: #2a2a2a;
-            border: 1px solid white;
+        .combatant-visual {
             position: relative;
-            margin-bottom: 0.5rem;
+            width: 100%;
+            max-width: 120px;
+        }
+        .combatant-portrait {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            display: block;
+        }
+        .combatant-portrait.player { border: 3px solid var(--accent-color); }
+        .combatant-portrait.enemy { border: 3px solid var(--danger-color); }
+        .combatant-hp-bar-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: rgba(42, 42, 42, 0.8);
+            border: 1px solid white;
+            border-top: none;
         }
         .combatant-hp-bar {
             height: 100%;
@@ -477,18 +518,7 @@
             font-size: 0.8rem;
             font-weight: bold;
         }
-        .combatant-portrait {
-            width: 100%;
-            max-width: 120px;
-            height: auto;
-            aspect-ratio: 1 / 1;
-            object-fit: cover;
-            background-color: rgba(0,0,0,0.5);
-            order: -1;
-        }
-        .combatant-portrait.player { border: 3px solid var(--accent-color); }
-        .combatant-portrait.enemy { border: 3px solid var(--danger-color); }
-        
+
         .combat-actions-center {
             display: flex;
             flex-direction: column;
@@ -502,11 +532,24 @@
         }
 
         /* Media Query for Mobile */
+        @media (max-width: 768px) {
+            .story-section {
+                grid-template-columns: 1fr;
+            }
+            .side-panel {
+                width: 90%;
+                right: 5%;
+                bottom: 0.5rem;
+                max-height: 30%;
+                max-width: none;
+            }
+        }
         @media (max-width: 600px) {
             .combat-view-container {
                 padding: 0.5rem;
                 gap: 0.25rem;
             }
+            .combatant-visual { max-width: 100px; }
             .combatant-info {
                 max-width: 120px;
             }
@@ -527,8 +570,8 @@
                 font-size: 0.9rem;
             }
         }
-
         @media (max-width: 400px) {
+            .combatant-visual { max-width: 80px; }
             .combatant-info {
                 max-width: 90px;
             }

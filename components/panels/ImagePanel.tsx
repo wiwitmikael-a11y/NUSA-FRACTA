@@ -129,20 +129,23 @@ const ImagePanel: React.FC = () => {
     const enemyImageUrl = currentEnemyId ? getEnemyImageUrl(currentEnemyId) : null;
 
 
-    if (!imageUrl) {
-        return <div className="panel image-panel placeholder">{currentLocation || ''}</div>;
-    }
-
     return (
         <div className="panel image-panel">
-            <img
-                key={imageUrl}
-                src={imageUrl}
-                alt={currentLocation || 'Scene image'}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-                className={isLoading ? 'loading' : 'loaded'}
-            />
+            {imageUrl && (
+                <img
+                    key={imageUrl}
+                    src={imageUrl}
+                    alt={currentLocation || 'Scene image'}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                    className={isLoading ? 'loading' : 'loaded'}
+                />
+            )}
+            
+            {!isInCombat && currentLocation && (
+                <div className="location-display">{currentLocation}</div>
+            )}
+
             {isLoading && <div className="spinner-overlay"><div className="spinner"></div></div>}
             
             <div className={`atmospheric-overlay ${overlayClass} ${overlayClass ? 'visible' : ''}`}></div>
@@ -151,12 +154,14 @@ const ImagePanel: React.FC = () => {
                 <div className="combat-view-container">
                     {/* Player Info */}
                     <div className="combatant-info player-combatant">
-                         {player.portraitUrl && <img src={player.portraitUrl} alt="Player" className="combatant-portrait player" />}
-                         <h4>{player.name}</h4>
-                         <div className="combatant-hp-bar-container">
-                            <div className="combatant-hp-bar player" style={{ width: `${playerHpPercentage}%` }}></div>
-                            <div className="combatant-hp-text">{player.hp} / {player.maxHp}</div>
+                         <div className="combatant-visual">
+                            {player.portraitUrl && <img src={player.portraitUrl} alt="Player" className="combatant-portrait player" />}
+                             <div className="combatant-hp-bar-container">
+                                <div className="combatant-hp-bar player" style={{ width: `${playerHpPercentage}%` }}></div>
+                                <div className="combatant-hp-text">{player.hp} / {player.maxHp}</div>
+                             </div>
                          </div>
+                         <h4>{player.name}</h4>
                     </div>
 
                     {/* Combat Actions */}
@@ -167,12 +172,14 @@ const ImagePanel: React.FC = () => {
 
                     {/* Enemy Info */}
                     <div className="combatant-info enemy-combatant">
-                         {enemyImageUrl && <img src={enemyImageUrl} alt={enemy.name} className="combatant-portrait enemy" />}
-                         <h4>{enemy.name}</h4>
-                         <div className="combatant-hp-bar-container">
-                            <div className="combatant-hp-bar enemy" style={{ width: `${enemyHpPercentage}%` }}></div>
-                            <div className="combatant-hp-text">{enemyCurrentHp} / {enemy.hp}</div>
-                         </div>
+                        <div className="combatant-visual">
+                            {enemyImageUrl && <img src={enemyImageUrl} alt={enemy.name} className="combatant-portrait enemy" />}
+                             <div className="combatant-hp-bar-container">
+                                <div className="combatant-hp-bar enemy" style={{ width: `${enemyHpPercentage}%` }}></div>
+                                <div className="combatant-hp-text">{enemyCurrentHp} / {enemy.hp}</div>
+                             </div>
+                        </div>
+                        <h4>{enemy.name}</h4>
                     </div>
                 </div>
             )}

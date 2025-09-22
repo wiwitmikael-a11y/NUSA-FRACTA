@@ -17,20 +17,21 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
 
         Aturan Paling Penting:
         1.  **Format JSON**: Respons HARUS berupa objek JSON tunggal yang valid, sesuai dengan skema. JANGAN tambahkan markdown (seperti \`\`\`json) di sekitarnya.
-        2.  **TIDAK ADA JALAN BUNTU (PENTING!)**: Setiap node HARUS memiliki setidaknya SATU pilihan yang TIDAK memiliki properti 'condition' sama sekali. Ini adalah pilihan 'fallback' yang selalu bisa dipilih pemain untuk menjamin kelanjutan cerita.
+        2.  **TIDAK ADA JALAN BUNTU**: Setiap node HARUS memiliki setidaknya SATU pilihan yang TIDAK memiliki properti 'condition' atau 'check'. Ini adalah pilihan 'fallback' yang selalu bisa dipilih pemain.
         3.  **Kreativitas & Skala**: Buat narasi yang menarik, kompleks, dan sinematik. Gunakan nama tempat, slang, dan budaya lokal yang relevan. Cerita harus terasa besar dan berdampak.
         4.  **Konsistensi**: Pertahankan konsistensi dengan keadaan pemain yang diberikan. Lanjutkan cerita dari lokasi dan kondisi saat ini.
-        5.  **Gameplay Bermakna**: Sediakan 2-4 pilihan yang benar-benar berbeda di setiap node. Pilihan harus mengarah ke cabang cerita yang berbeda, bukan hanya variasi teks kecil.
-        6.  **Struktur Bab**: Bab harus terdiri dari 15-25 node yang saling berhubungan. Node pertama harus 'start'. Salah satu node harus menjadi akhir dari bab (isChapterEnd: true).
-        7.  **Lokasi Deskriptif**: Berikan nama lokasi yang imersif dan spesifik, contoh: "Lobi Menara Perkantoran Arcadia yang Sunyi", "Pasar Darurat di Reruntuhan Stasiun Gambir", "Terowongan MRT Tergenang Air".
-        8.  **Waktu & Suasana**: Untuk setiap node, tentukan 'timeOfDay' (pagi, siang, sore, malam) untuk membangun atmosfer.
-        9.  **Cek Atribut**: Buat beberapa pilihan yang memerlukan cek atribut. Tulis teks pilihan dengan format: "[NamaAtribut NilaiMinimal+] Teks Pilihan". Contoh: "[Kekuatan 8+] Robohkan barikade darurat."
-        10. **Konsekuensi Pilihan (WAJIB)**: Setiap pilihan harus memiliki dampak. Gunakan properti 'effects' dalam pilihan untuk memberikan item, mengubah HP, memulai pertarungan, atau mengatur story flag.
-            // FIX: Removed nested backticks from the example JSON strings to resolve a syntax error.
-            - {"type": "GAIN_ITEM", "key": "item_id", "value": 1, "message": "Kamu menemukan perban."}
-            - {"type": "CHANGE_HP", "value": -10, "message": "Kamu terluka saat melompat."}
-            - {"type": "START_COMBAT", "key": "enemy_id", "message": "Sesosok anomali melompat ke arahmu!"}
-            - {"type": "SET_FLAG", "key": "quest_id", "value": 1, "message": "Kamu memulai misi baru."}
+        5.  **Gameplay Bermakna**: Sediakan 2-4 pilihan yang benar-benar berbeda di setiap node.
+        6.  **Struktur Bab**: Bab harus terdiri dari 15-25 node. Node pertama 'start'. Satu node harus menjadi akhir (isChapterEnd: true).
+        7.  **Lokasi Deskriptif**: Berikan nama lokasi yang imersif dan spesifik.
+        8.  **Waktu & Suasana**: Untuk setiap node, tentukan 'timeOfDay' (pagi, siang, sore, malam).
+        9.  **Cek Atribut Statis (Syarat Mutlak)**: Gunakan properti 'condition' untuk pilihan yang hanya bisa diambil jika syarat terpenuhi. Contoh: "[Kekuatan 8+] Robohkan barikade." Nilai syarat HARUS masuk akal (tidak lebih dari +3 dari atribut pemain saat ini).
+        10. **Cek Atribut Probabilistik (BARU & PENTING!)**: Untuk aksi yang berisiko, gunakan properti 'check'. Ini akan memicu "lemparan dadu" di dalam game.
+            - "check": { "attribute": "ketangkasan", "difficulty": 12 } -> Atribut yang diuji dan tingkat kesulitan (angka 5-18).
+            - "effects": Ini adalah efek jika cek BERHASIL.
+            - "failureEffects": Ini adalah efek jika cek GAGAL (misal: kehilangan HP, item, atau memicu alarm).
+            - Contoh: Pilihan "Coba membobol kunci" bisa berhasil membuka pintu (effects) atau gagal dan merusak alat (failureEffects).
+        11. **Konsekuensi Pilihan**: Setiap pilihan harus memiliki dampak. Gunakan 'effects' (untuk sukses/pilihan simpel) dan 'failureEffects' (untuk kegagalan cek).
+        12. **Validitas Node Tujuan**: Pastikan setiap 'targetNodeId' mengacu pada 'nodeId' yang ADA di dalam daftar 'nodes' yang Anda hasilkan.
 
         Lore Dunia NUSA FRACTA (Gunakan ini sebagai inspirasi):
         - Faksi Utama: Sisa Kemanusiaan, Gerombolan Besi (raider kejam), Teknokrat (pencari teknologi), Geng Bangsat (anarkis), Pemburu Agraria (survivalis alam), Republik Merdeka (pembangun peradaban), Saudagar Jalanan (pedagang), Sekte Pustaka (penjaga pengetahuan).
@@ -38,11 +39,11 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
         - Musuh: Anjing Liar, Preman Kumuh, Perampok, Anomali Tengkorak, Anomali Jamur, Ratu Anomali (boss).
 
         Instruksi Tambahan untuk Bab Ini:
-        - Ciptakan narasi yang epik dan bercabang. Jangan takut membuat alur cerita yang dramatis.
-        - Perkenalkan setidaknya satu faksi secara mendalam. Tunjukkan cara hidup, markas, atau anggota penting mereka.
-        - Berikan kesempatan untuk bertemu salah satu calon companion (Ayra, Davina, atau Raizen) dan berinteraksi dengan mereka.
-        - Variasikan tantangan: dialog dengan konsekuensi, eksplorasi berbahaya, teka-teki lingkungan, dan pertarungan yang menegangkan.
-        - Pastikan akhir bab terasa seperti sebuah pencapaian, bukan berhenti mendadak.
+        - Ciptakan narasi yang epik dan bercabang. Manfaatkan mekanik 'check' probabilistik untuk menciptakan momen menegangkan.
+        - Perkenalkan setidaknya satu faksi secara mendalam.
+        - Berikan kesempatan untuk bertemu salah satu calon companion (Ayra, Davina, atau Raizen).
+        - Variasikan tantangan: dialog, eksplorasi, teka-teki, dan pertarungan.
+        - Pastikan akhir bab terasa seperti sebuah pencapaian.
 
         Karakter Pemain Saat Ini:
         - Nama: ${player.name}
@@ -67,11 +68,9 @@ export const generateChapter = async (gameState: GameState, chapterDetails: { ti
 
     try {
         const response = await ai.models.generateContent({
-            // FIX: Use 'gemini-2.5-flash' model.
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
-                // FIX: Use responseMimeType and responseSchema for structured JSON output.
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: Type.OBJECT,
@@ -121,6 +120,29 @@ export const generateChapter = async (gameState: GameState, chapterDetails: { ti
                                                         },
                                                         required: ['type', 'message']
                                                     }
+                                                },
+                                                check: {
+                                                    type: Type.OBJECT,
+                                                    nullable: true,
+                                                    properties: {
+                                                        attribute: { type: Type.STRING },
+                                                        difficulty: { type: Type.NUMBER }
+                                                    },
+                                                    required: ['attribute', 'difficulty']
+                                                },
+                                                failureEffects: {
+                                                    type: Type.ARRAY,
+                                                    nullable: true,
+                                                    items: {
+                                                        type: Type.OBJECT,
+                                                        properties: {
+                                                            type: { type: Type.STRING },
+                                                            key: { type: Type.STRING, nullable: true },
+                                                            value: { type: Type.NUMBER, nullable: true },
+                                                            message: { type: Type.STRING }
+                                                        },
+                                                        required: ['type', 'message']
+                                                    }
                                                 }
                                             },
                                             required: ['text', 'targetNodeId']
@@ -137,11 +159,9 @@ export const generateChapter = async (gameState: GameState, chapterDetails: { ti
             },
         });
 
-        // FIX: Extract text and parse it as JSON.
         const jsonText = response.text.trim();
         const generatedChapter = JSON.parse(jsonText) as Chapter;
         
-        // Ensure the generated chapter has the correct title and objective
         generatedChapter.title = chapterDetails.title;
         generatedChapter.objective = chapterDetails.objective;
 
