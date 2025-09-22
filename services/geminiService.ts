@@ -1,133 +1,106 @@
 // services/geminiService.ts
 import { GoogleGenAI, Type } from "@google/genai";
-import { GameState, Chapter } from '../types';
-import { codex } from '../core/codex';
+import type { GameState, Chapter } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+// FIX: Initialize GoogleGenAI with a named apiKey object.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-// --- JSON Schema Definition for Chapter Generation ---
-const choiceConditionSchema = {
-    type: Type.OBJECT,
-    properties: {
-        type: { type: Type.STRING, enum: ['ATTRIBUTE', 'HAS_ITEM', 'HAS_SKILL'] },
-        key: { type: Type.STRING, description: 'AttributeId, ItemId, atau SkillId yang akan diperiksa.' },
-        value: { type: Type.INTEGER, description: 'Nilai yang dibutuhkan (skor atribut min, jumlah item min).' },
-    },
-    required: ['type', 'key', 'value'],
-};
-
-const storyEffectSchema = {
-    type: Type.OBJECT,
-    properties: {
-        type: { type: Type.STRING, enum: ['CHANGE_HP', 'ADD_ITEM', 'REMOVE_ITEM', 'CHANGE_REPUTATION', 'ADD_XP', 'SET_FLAG', 'START_COMBAT'] },
-        key: { type: Type.STRING, description: 'Target efek, misal ItemId, FactionId, EnemyId, atau nama flag.' },
-        value: { type: Type.INTEGER, description: 'Besaran efek.' },
-    },
-    required: ['type', 'key', 'value'],
-};
-
-const chapterNodeChoiceSchema = {
-    type: Type.OBJECT,
-    properties: {
-        text: { type: Type.STRING, description: 'Teks pilihan yang ditampilkan ke pemain.' },
-        targetNodeId: { type: Type.STRING, description: 'nodeId tujuan. HARUS ada di dalam array nodes.' },
-        condition: { type: Type.ARRAY, items: choiceConditionSchema, description: 'Syarat opsional agar pilihan ini tersedia.' },
-        effects: { type: Type.ARRAY, items: storyEffectSchema, description: 'Efek yang langsung terjadi saat pilihan dibuat.' },
-    },
-    required: ['text', 'targetNodeId', 'effects'],
-};
-
-const chapterNodeSchema = {
-    type: Type.OBJECT,
-    properties: {
-        nodeId: { type: Type.STRING, description: 'ID unik dan deskriptif untuk node ini (mis: "masuk_pasar", "bicara_dengan_pedagang").' },
-        narrative: { type: Type.STRING, description: 'Teks narasi utama untuk adegan ini.' },
-        isChapterEnd: { type: Type.BOOLEAN, description: 'Set ke true jika node ini mengakhiri bab.' },
-        choices: { type: Type.ARRAY, items: chapterNodeChoiceSchema, description: 'Daftar pilihan yang tersedia. Tidak boleh kosong kecuali isChapterEnd true.' },
-        location: { type: Type.STRING, description: 'Nama deskriptif untuk lokasi saat ini (mis: "Pasar Gelap", "Reruntuhan Monas").' },
-        effects: { type: Type.ARRAY, items: storyEffectSchema, description: 'Efek yang otomatis terjadi saat memasuki node ini.' },
-    },
-    required: ['nodeId', 'narrative', 'choices', 'location'],
-};
-
-const chapterSchema = {
-    type: Type.OBJECT,
-    properties: {
-        chapterId: { type: Type.STRING, description: 'ID unik untuk bab ini (mis: "bab1_gema_di_sudirman").' },
-        startNodeId: { type: Type.STRING, description: 'nodeId dari node pertama. HARUS ada di dalam array nodes.' },
-        nodes: { type: Type.ARRAY, items: chapterNodeSchema, description: 'Array berisi semua node cerita dalam bab ini. Harus berisi jaringan cerita yang besar dan bercabang (minimal 100-300 node) untuk pengalaman yang mendalam.' },
-    },
-    required: ['chapterId', 'startNodeId', 'nodes'],
-};
-// --- End of Schema Definition ---
-
-const buildChapterPrompt = (gameState: GameState, premise: { title: string, objective: string }): string => {
+const generateChapterPrompt = (gameState: GameState, objective: string): string => {
     const { player } = gameState;
-
-    const codexSummary = `
-    Item Penting: ${Object.keys(codex.items).join(', ')}.
-    Musuh: ${Object.keys(codex.enemies).join(', ')}.
-    Faksi: Sisa Kemanusiaan, Gerombolan Besi, Teknokrat, Geng Bangsat, Pemburu Agraris, Republik Merdeka, Saudagar Jalanan, Sekte Pustaka.
-    Atribut Pemain: kekuatan, ketangkasan, kecerdasan, karisma.
-    Keahlian Pemain: ${Object.keys(codex.skills).join(', ')}.
-    `;
+    const inventoryList = player.inventory.map(i => `${i.itemId} (x${i.quantity})`).join(', ') || 'kosong';
+    const attributes = `Kekuatan ${player.attributes.kekuatan}, Ketangkasan ${player.attributes.ketangkasan}, Kecerdasan ${player.attributes.kecerdasan}, Karisma ${player.attributes.karisma}`;
 
     return `
-      Anda adalah Game Master (GM) jenius untuk RPG teks bernama NUSA FRACTA, berlatar di Jakarta pasca-apokaliptik.
-      Tugas Anda adalah MENCIPTAKAN SELURUH BAB CERITA dari awal hingga akhir dalam format JSON yang valid dan sesuai dengan skema yang diberikan.
+        Anda adalah Game Master untuk sebuah game RPG teks post-apocalyptic bernama NUSA FRACTA, berlatar di reruntuhan Jakarta, Indonesia.
+        Tugas Anda adalah membuat satu bab cerita dalam format JSON yang ketat berdasarkan keadaan pemain saat ini dan tujuan bab.
 
-      PREMIS BAB INI:
-      - Judul: "${premise.title}"
-      - Tujuan: "${premise.objective}"
+        Aturan Penting:
+        1.  **Format JSON**: Respons HARUS berupa objek JSON tunggal yang valid, sesuai dengan skema yang diberikan. JANGAN tambahkan markdown (seperti \`\`\`json) di sekitar JSON.
+        2.  **Kreativitas**: Buat narasi yang menarik, imersif, dan sesuai dengan tema post-apocalyptic Indonesia. Gunakan nama tempat, slang, dan budaya lokal yang relevan.
+        3.  **Konsistensi**: Pertahankan konsistensi dengan keadaan pemain yang diberikan.
+        4.  **Gameplay**: Sediakan 2-4 pilihan yang bermakna di setiap node. Pilihan harus mengarah ke node yang berbeda atau memiliki konsekuensi.
+        5.  **Struktur Bab**: Bab harus terdiri dari 5-8 node yang saling berhubungan. Node pertama harus 'start'. Salah satu node harus menjadi akhir dari bab (isChapterEnd: true).
+        6.  **Lokasi**: Berikan nama lokasi yang deskriptif dan spesifik untuk setiap node, contoh: "Lobi Gedung Perkantoran Terbengkalai", "Gang Sempit di Belakang Plaza", "Stasiun MRT Bawah Tanah".
+        7.  **Waktu**: Untuk setiap node, tentukan 'timeOfDay' (pagi, siang, sore, malam) untuk mengatur suasana.
+        8.  **Node ID**: nodeId harus berupa string pendek dan deskriptif (misal: 'start', 'lobi_investigasi', 'kabur_lewat_jendela').
 
-      STATUS PEMAIN SAAT INI:
-      - Nama: ${player.name}
-      - Level: ${player.level}
-      - HP: ${player.hp}/${player.maxHp}
-      - Latar Belakang: ${player.backgroundId ? codex.backgrounds[player.backgroundId].name : 'Tidak Diketahui'}
-      - Atribut: ${JSON.stringify(player.attributes)}
-      - Inventaris: ${player.inventory.map(i => `${i.itemId} (x${i.quantity})`).join(', ') || 'Kosong'}
+        Karakter Pemain Saat Ini:
+        - Nama: ${player.name}
+        - Level: ${player.level}
+        - Latar Belakang: ${player.backgroundId}
+        - Keahlian: ${player.skillId}
+        - Atribut: ${attributes}
+        - Inventaris: ${inventoryList}
+        - Lokasi Saat Ini: ${gameState.currentLocation}
+        - Story Flags: ${JSON.stringify(player.storyFlags)}
 
-      ATURAN PENTING:
-      1.  **HASILKAN JSON LENGKAP:** Anda harus menghasilkan objek JSON tunggal yang berisi keseluruhan bab.
-      2.  **PATUHI SKEMA:** JSON Anda HARUS 100% valid sesuai dengan skema yang diberikan. Ini sangat penting.
-      3.  **CERITA MENDALAM & BERCABANG:** Buatlah narasi yang kompleks dengan banyak pilihan. Bab ini harus terasa besar dan luas, dengan minimal 100-300 node yang saling terhubung untuk memberikan banyak jalur dan replayability.
-      4.  **KONSISTENSI LOGIKA:** Semua 'targetNodeId' dalam pilihan HARUS merujuk ke 'nodeId' yang ada di dalam array 'nodes' yang Anda buat. JANGAN membuat referensi ke node yang tidak ada.
-      5.  **ID DESKRIPTIF:** Gunakan 'nodeId' yang singkat dan deskriptif (contoh: 'memasuki_lobi', 'bertemu_pedagang_misterius').
-      6.  **GUNAKAN CODEX:** Manfaatkan item, musuh, faksi, dan keahlian dari ringkasan codex di bawah ini saat membuat efek, syarat, dan narasi.
-      7.  **AWAL & AKHIR:** Bab harus memiliki 'startNodeId' yang jelas dan setidaknya satu node dengan 'isChapterEnd: true'.
-      8.  **BAHASA:** Seluruh narasi, teks pilihan, dan lokasi harus dalam Bahasa Indonesia.
-      9.  **NODE KEKALAHAN:** SELALU sertakan node kekalahan (defeat node) dengan nodeId "kalah_dan_pingsan". Node ini harus mendeskripsikan pemain pingsan, kehilangan beberapa item acak, dan kemudian sadar kembali di lokasi awal bab. Ini adalah node penting untuk penanganan kekalahan dalam pertempuran.
+        Tujuan Bab Ini:
+        ${objective}
 
-      RINGKASAN CODEX UNTUK REFERENSI:
-      ${codexSummary}
-
-      Sekarang, tuliskan seluruh bab cerita berdasarkan premis di atas dalam format JSON.
+        Sekarang, buatkan konten untuk bab ini dalam format JSON sesuai skema.
     `;
 };
 
-export const generateChapter = async (gameState: GameState, premise: { title: string, objective: string }): Promise<Chapter> => {
-    const prompt = buildChapterPrompt(gameState, premise);
+export const generateChapter = async (gameState: GameState, chapterDetails: { title: string; objective: string }): Promise<Chapter> => {
+    const prompt = generateChapterPrompt(gameState, chapterDetails.objective);
 
     try {
-        console.log("Generating new chapter with premise:", premise.objective);
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            // FIX: Use 'gemini-2.5-flash' model.
+            model: "gemini-2.5-flash",
             contents: prompt,
             config: {
+                // FIX: Use responseMimeType and responseSchema for structured JSON output.
                 responseMimeType: "application/json",
-                responseSchema: chapterSchema,
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        chapterId: { type: Type.STRING },
+                        title: { type: Type.STRING },
+                        objective: { type: Type.STRING },
+                        nodes: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    nodeId: { type: Type.STRING },
+                                    narrative: { type: Type.STRING },
+                                    location: { type: Type.STRING },
+                                    timeOfDay: { type: Type.STRING },
+                                    choices: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                text: { type: Type.STRING },
+                                                targetNodeId: { type: Type.STRING },
+                                            },
+                                            required: ['text', 'targetNodeId']
+                                        }
+                                    },
+                                    isChapterEnd: { type: Type.BOOLEAN }
+                                },
+                                required: ['nodeId', 'narrative', 'location', 'timeOfDay', 'choices']
+                            }
+                        }
+                    },
+                    required: ['chapterId', 'title', 'objective', 'nodes']
+                },
             },
         });
-        
+
+        // FIX: Extract text and parse it as JSON.
         const jsonText = response.text.trim();
-        console.log("Gemini response received, parsing JSON...");
-        const generatedChapter = JSON.parse(jsonText);
-        console.log("Chapter generated successfully with", generatedChapter.nodes.length, "nodes.");
-        return generatedChapter as Chapter;
+        const generatedChapter = JSON.parse(jsonText) as Chapter;
+        
+        // Ensure the generated chapter has the correct title and objective
+        generatedChapter.title = chapterDetails.title;
+        generatedChapter.objective = chapterDetails.objective;
+
+        return generatedChapter;
 
     } catch (error) {
-        console.error("Gemini API call failed to generate chapter:", error);
-        throw new Error("Gagal menghasilkan bab cerita dari AI. Silakan coba lagi.");
+        console.error("Error generating chapter with Gemini:", error);
+        throw new Error("Gagal menghasilkan alur cerita baru. Mungkin ada masalah dengan koneksi atau API key.");
     }
 };

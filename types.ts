@@ -1,33 +1,28 @@
 // types.ts
-import { codex } from './core/codex';
 
-export type ItemId = keyof typeof codex.items;
-export type SkillId = keyof typeof codex.skills;
-export type EnemyId = keyof typeof codex.enemies;
-export type FactionId = 'sisa_kemanusiaan' | 'gerombolan_besi' | 'teknokrat' | 'geng_bangsat' | 'pemburu_agraris' | 'republik_merdeka' | 'saudagar_jalanan' | 'sekte_pustaka';
+// --- ID Types ---
 export type AttributeId = 'kekuatan' | 'ketangkasan' | 'kecerdasan' | 'karisma';
-export type StoryEffectType = 'CHANGE_HP' | 'ADD_ITEM' | 'REMOVE_ITEM' | 'CHANGE_REPUTATION' | 'ADD_XP' | 'SET_FLAG' | 'START_COMBAT';
-export type ConditionType = 'ATTRIBUTE' | 'HAS_ITEM' | 'HAS_SKILL';
+export type FactionId = 'sisa_kemanusiaan' | 'gerombolan_besi' | 'teknokrat' | 'geng_bangsat' | 'pemburu_agraris' | 'republik_merdeka' | 'saudagar_jalanan' | 'sekte_pustaka';
+export type ItemId = string;
+export type SkillId = string;
+export type BackgroundId = string;
+export type EnemyId = string;
+export type QuestId = string;
+export type NodeId = string;
+export type ChapterId = string;
+export type TimeOfDay = 'pagi' | 'siang' | 'sore' | 'malam';
 
-
-export interface Item {
-  itemId: ItemId;
-  quantity: number;
-}
-
-export interface Reputation {
-  [factionId: string]: number;
-}
-
-export interface StoryFlags {
-  [flag: string]: boolean;
-}
-
+// --- Player & Character ---
 export interface PlayerAttributes {
   kekuatan: number;
   ketangkasan: number;
   kecerdasan: number;
   karisma: number;
+}
+
+export interface InventoryItem {
+  itemId: ItemId;
+  quantity: number;
 }
 
 export interface Player {
@@ -36,98 +31,140 @@ export interface Player {
   maxHp: number;
   xp: number;
   level: number;
-  unspentAttributePoints: number; 
-  inventory: Item[];
-  reputation: Reputation;
-  storyFlags: StoryFlags;
+  unspentAttributePoints: number;
+  inventory: InventoryItem[];
+  reputation: Record<FactionId, number>;
+  storyFlags: Record<QuestId, boolean | number>;
   attributes: PlayerAttributes;
-  backgroundId: string | null;
+  backgroundId: BackgroundId | null;
   skillId: SkillId | null;
   portraitUrl: string | null;
 }
 
-export interface ChoiceCondition {
-    type: ConditionType;
-    key: AttributeId | ItemId | SkillId;
-    value: number; // For attributes: min value. For items: min quantity. For skills: ignored.
+// --- Story & Narrative ---
+export interface ChapterNodeChoice {
+  text: string;
+  targetNodeId: NodeId;
+  condition?: ChoiceCondition[];
+  effects?: ChoiceEffect[];
 }
 
-export interface StoryEffect {
-  type: StoryEffectType;
-  key: string; // e.g., ItemId, FactionId, EnemyId etc.
+export interface ChoiceCondition {
+  type: 'ATTRIBUTE' | 'HAS_ITEM' | 'HAS_SKILL';
+  key: AttributeId | ItemId | SkillId;
   value: number;
 }
 
-export interface ChapterNodeChoice {
-  text: string;
-  targetNodeId: string;
-  condition?: ChoiceCondition[]; 
-  effects: StoryEffect[];
+export interface ChoiceEffect {
+    type: 'GAIN_ITEM' | 'LOSE_ITEM' | 'GAIN_XP' | 'CHANGE_HP' | 'SET_FLAG' | 'START_COMBAT';
+    key: ItemId | QuestId | EnemyId;
+    value: number;
+    message: string;
 }
 
 export interface ChapterNode {
-  nodeId: string;
+  nodeId: NodeId;
   narrative: string;
-  isChapterEnd?: boolean;
-  choices: ChapterNodeChoice[];
   location: string;
-  effects?: StoryEffect[];
+  timeOfDay: TimeOfDay;
+  choices: ChapterNodeChoice[];
+  isChapterEnd?: boolean;
 }
 
 export interface Chapter {
-  chapterId: string;
+  chapterId: ChapterId;
+  title: string;
+  objective: string;
   nodes: ChapterNode[];
-  startNodeId: string;
 }
 
-export interface EventLogMessage {
-    id: number;
-    message: string;
-    type: 'success' | 'danger' | 'neutral';
-}
-
-// NEW: For combat
-export interface Enemy {
-    name: string;
-    hp: number;
-    attack: number;
-    defense: number;
-    xp_reward: number;
-}
-
-// NEW: for combat log
-export interface CombatLogEntry {
-    id: number;
-    message: string;
-    turn: 'player' | 'enemy' | 'info';
-}
-
+// --- Game State ---
 export interface GameState {
   player: Player;
   currentChapter: Chapter | null;
-  currentNodeId: string | null;
+  currentNodeId: NodeId | null;
   currentLocation: string;
+  currentTimeOfDay: TimeOfDay;
   isLoading: boolean;
   gameStarted: boolean;
   error: string | null;
   eventLog: EventLogMessage[];
   isChapterEndModalOpen: boolean;
   isNarrativeComplete: boolean;
-  // REMOVED: Dynamic narrative from Gemini is no longer needed
-  // NEW: Combat State
+  // Combat State
   isInCombat: boolean;
   currentEnemyId: EnemyId | null;
   enemyCurrentHp: number;
-  combatLog: CombatLogEntry[];
+  combatLog: CombatLogMessage[];
 }
 
-// NEW: for crafting & quests
+// --- UI & Events ---
+export interface EventLogMessage {
+  id: string;
+  message: string;
+  type: 'reward' | 'info' | 'danger';
+}
+
+export interface CombatLogMessage {
+  id: string;
+  message: string;
+  turn: 'player' | 'enemy';
+}
+
+
+// --- Codex Data ---
+export interface Codex {
+  items: Record<ItemId, Item>;
+  skills: Record<SkillId, Skill>;
+  backgrounds: Record<BackgroundId, Background>;
+  enemies: Record<EnemyId, Enemy>;
+  recipes: Record<string, Recipe>;
+  quests: Record<QuestId, Quest>;
+}
+
+export interface Item {
+  name: string;
+  description: string;
+  type: 'weapon' | 'consumable' | 'key' | 'material' | 'misc';
+  effects?: any; // Simplified for now
+}
+
+export interface Skill {
+  name: string;
+  description: string;
+  effects: Effect[];
+}
+
+export interface Background {
+  name: string;
+  description: string;
+  effects: Effect[];
+  portraitUrl: string;
+}
+
+export interface Enemy {
+  name: string;
+  description: string;
+  hp: number;
+  attack: number;
+  defense: number;
+  xpValue: number;
+  lootTable: { itemId: ItemId; chance: number; quantity: [number, number] }[];
+}
+
 export interface Recipe {
     name: string;
+    result: { itemId: ItemId; quantity: number };
     ingredients: { itemId: ItemId; quantity: number }[];
-    output: { itemId: ItemId; quantity: number };
 }
+
 export interface Quest {
     name: string;
     description: string;
+}
+
+export interface Effect {
+  type: 'ATTRIBUTE_MOD' | 'SKILL_BONUS';
+  key: AttributeId | string;
+  value: number;
 }

@@ -1,18 +1,20 @@
+// components/ui/InventoryUI.tsx
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
-import { useItem } from '../../store/gameSlice';
 import { codex } from '../../core/codex';
 import { ItemId } from '../../types';
 
 const InventoryUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
     const inventory = useSelector((state: RootState) => state.game.player.inventory);
     const dispatch = useDispatch<AppDispatch>();
-    
+
     if (!isOpen) return null;
 
     const handleUseItem = (itemId: ItemId) => {
-        dispatch(useItem(itemId));
+        // Dispatch logic to use an item would go here
+        console.log(`Using item: ${itemId}`);
+        // Example: dispatch(useItem(itemId));
     };
 
     return (
@@ -21,23 +23,27 @@ const InventoryUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
                 <h2>Inventaris</h2>
                 <button onClick={onClose} className="close-button">X</button>
                 <ul className="inventory-list">
-                    {inventory.length > 0 ? inventory.map(item => {
-                        const itemDetails = codex.items[item.itemId];
-                        const isUsable = itemDetails?.effects && itemDetails.effects.length > 0;
+                    {inventory.length > 0 ? inventory.map(({ itemId, quantity }) => {
+                        const itemDetails = codex.items[itemId];
+                        if (!itemDetails) return null;
+                        
                         return (
-                            <li key={item.itemId}>
+                            <li key={itemId}>
                                 <div className="item-info">
-                                    <strong>{itemDetails?.name || item.itemId} (x{item.quantity})</strong>
-                                    <p>{itemDetails?.description || 'No description.'}</p>
+                                    <strong>{itemDetails.name} (x{quantity})</strong>
+                                    <p>{itemDetails.description}</p>
                                 </div>
-                                {isUsable && (
-                                    <button className="action-button" onClick={() => handleUseItem(item.itemId)}>
+                                {itemDetails.type === 'consumable' && (
+                                    <button 
+                                        className="action-button"
+                                        onClick={() => handleUseItem(itemId)}
+                                    >
                                         Gunakan
                                     </button>
                                 )}
                             </li>
                         );
-                    }) : <li>Kosong</li>}
+                    }) : <li>Inventaris kosong.</li>}
                 </ul>
             </div>
         </div>

@@ -1,32 +1,8 @@
 // services/assetService.ts
-
-// ===================================================================================
-// PANDUAN PENTING UNTUK GAMBAR LATAR (BACKGROUND IMAGES)
-// ===================================================================================
-// Agar gambar latar belakang muncul dengan benar, Anda HARUS menempatkan file gambar Anda
-// dalam struktur folder berikut di dalam proyek Anda:
-//
-// [FOLDER_PROYEK_ANDA]
-// │
-// └─── public/
-//      │
-//      └─── backgrounds/
-//           │
-//           ├── bg_dome_01.jpeg
-//           ├── bg_gang_sampah_01.jpeg
-//           ├── bg_jalanraya_01.jpeg
-//           └── ... (dan semua file gambar latar lainnya)
-//
-// - Folder `public` berada di tingkat atas (root) dari direktori proyek Anda.
-// - Di dalam `public`, buat folder bernama `backgrounds`.
-// - Tempatkan SEMUA file gambar latar (.jpeg) langsung di dalam folder `backgrounds`.
-// - JANGAN membuat subfolder tambahan di dalam `backgrounds` (seperti `jalanRaya`, `mall`, dll.).
-//
-// Kode di bawah ini secara otomatis akan membuat URL yang benar (misalnya, "/backgrounds/bg_jalanraya_01.jpeg")
-// jika Anda mengikuti struktur folder ini.
-// ===================================================================================
-
 import { assetManifest } from '../core/assetManifest';
+
+const BACKGROUND_BASE_URL = 'https://raw.githubusercontent.com/wiwitmikael-a11y/nusa-FRACTA-assets/main/backgrounds';
+const PORTRAIT_BASE_URL = 'https://raw.githubusercontent.com/wiwitmikael-a11y/nusa-FRACTA-assets/main/portraits';
 
 type AssetKey = keyof typeof assetManifest.backgrounds;
 
@@ -164,12 +140,20 @@ export const getImageUrlForLocation = (location: string): string | null => {
         const images = assetManifest.backgrounds[key];
         const imageName = getRandomImage(images);
         if (imageName) {
-            // Path ini disederhanakan. Diasumsikan semua latar belakang berada langsung di folder /backgrounds/.
-            // Ini lebih kuat karena nama file sudah memiliki namespace (misalnya, bg_jalanraya_01.jpeg).
-            return `/backgrounds/${imageName}`;
+            return `${BACKGROUND_BASE_URL}/${imageName}`;
         }
     }
     
     console.warn(`No image asset key found for location: ${location}`);
     return null; // Return null jika benar-benar tidak ada yang cocok
+};
+
+export const getNpcImageUrl = (): string | null => {
+    const images = assetManifest.npcPortraits.generic;
+    const imageName = getRandomImage(images);
+    if (imageName) {
+        return `${PORTRAIT_BASE_URL}/${imageName}`;
+    }
+    console.warn(`Could not find a generic NPC image.`);
+    return null;
 };

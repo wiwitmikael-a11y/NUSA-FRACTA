@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 import { attack, flee } from '../../store/gameSlice';
@@ -20,12 +20,41 @@ const ImagePanel: React.FC = () => {
         enemyCurrentHp,
         combatLog,
         currentLocation,
+        currentTimeOfDay,
     } = useSelector((state: RootState) => state.game);
 
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false); // Default to false, loading is an event.
     const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
     const prevCombatLogLength = useRef(combatLog.length);
+
+    // Logic for atmospheric overlay
+    const overlayClass = useMemo(() => {
+        // Combat has the highest priority
+        if (isInCombat) {
+            return 'overlay-combat';
+        }
+
+        const lowerLocation = currentLocation.toLowerCase();
+
+        // Specific location keywords take precedence over time of day
+        if (lowerLocation.includes('bawah tanah') || lowerLocation.includes('terowongan') || lowerLocation.includes('stasiun')) {
+            return 'overlay-underground';
+        }
+
+        // Time of day based overlays
+        switch (currentTimeOfDay) {
+            case 'pagi':
+                return 'overlay-morning';
+            case 'sore':
+                return 'overlay-dusk';
+            case 'malam':
+                return 'overlay-night';
+            case 'siang':
+            default:
+                return ''; // No overlay during the day
+        }
+    }, [isInCombat, currentLocation, currentTimeOfDay]);
 
     useEffect(() => {
         const newUrl = getImageUrlForLocation(currentLocation);
@@ -128,6 +157,8 @@ const ImagePanel: React.FC = () => {
             />
             {isLoading && <div className="spinner-overlay"><div className="spinner"></div></div>}
             
+            <div className={`atmospheric-overlay ${overlayClass} ${overlayClass ? 'visible' : ''}`}></div>
+
             {renderCombatOverlay()}
 
             <div className="floating-text-container">

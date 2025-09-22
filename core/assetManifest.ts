@@ -95,4 +95,12 @@ export const assetManifest = {
       'bg_warmindo_04.jpeg',
     ],
   },
+  npcPortraits: {
+    generic: [
+      'npc_generic_male_01.jpeg',
+      'npc_generic_female_01.jpeg',
+      'npc_scavenger_01.jpeg',
+      'npc_trader_01.jpeg',
+    ],
+  },
 };

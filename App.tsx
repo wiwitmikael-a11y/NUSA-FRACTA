@@ -53,7 +53,7 @@ const App: React.FC = () => {
             
             <main className="game-world">
                 <ImagePanel />
-                <div className="mid-section">
+                <div className="story-section">
                     <NarrativePanel />
                     <ChoicePanel />
                 </div>
