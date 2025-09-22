@@ -8,7 +8,8 @@ import { getImageUrlForLocation, getEnemyImageUrl } from '../../services/assetSe
 interface FloatingText {
     id: number;
     text: string;
-    type: 'player-damage' | 'enemy-damage' | 'critical' | 'dodge';
+    type: 'player-damage' | 'enemy-damage' | 'critical' | 'dodge' | 'reward' | 'info' | 'danger';
+    category: 'combat' | 'narrative';
     style: React.CSSProperties;
 }
 
@@ -22,12 +23,14 @@ const ImagePanel: React.FC = () => {
         combatLog,
         currentLocation,
         currentTimeOfDay,
+        eventLog,
     } = useSelector((state: RootState) => state.game);
 
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
     const prevCombatLogLength = useRef(combatLog.length);
+    const prevEventLogLength = useRef(eventLog.length);
 
     const overlayClass = useMemo(() => {
         if (isInCombat) {
@@ -64,7 +67,7 @@ const ImagePanel: React.FC = () => {
     useEffect(() => {
         if (combatLog.length > prevCombatLogLength.current) {
             const newLogEntry = combatLog[0];
-            let newText: Omit<FloatingText, 'id' | 'style'> | null = null;
+            let newText: Omit<FloatingText, 'id' | 'style' | 'category'> | null = null;
             
             switch(newLogEntry.type) {
                 case 'critical':
@@ -88,8 +91,9 @@ const ImagePanel: React.FC = () => {
             if (newText) {
                 const id = Date.now() + Math.random();
                 const newFloatingText: FloatingText = {
-                    ...newText,
+                    ...(newText as any), // Cast to any to satisfy TS for the spread
                     id,
+                    category: 'combat',
                     style: {
                         top: `${40 + Math.random() * 20}%`,
                         left: `${40 + Math.random() * 20}%`,
@@ -104,6 +108,41 @@ const ImagePanel: React.FC = () => {
         }
         prevCombatLogLength.current = combatLog.length;
     }, [combatLog]);
+
+    useEffect(() => {
+        if (eventLog.length > prevEventLogLength.current) {
+            const newLogEntries = eventLog.slice(prevEventLogLength.current);
+
+            newLogEntries.forEach((logEntry, index) => {
+                const lowerMessage = logEntry.message.toLowerCase();
+                 if (lowerMessage.includes('muncul!') || lowerMessage.includes('dikalahkan') || lowerMessage.includes('kabur')) {
+                    return;
+                }
+                
+                // Tunda kemunculan setiap pesan baru agar tidak tumpang tindih
+                setTimeout(() => {
+                    const id = Date.now() + Math.random();
+                    const newFloatingText: FloatingText = {
+                        id,
+                        text: logEntry.message,
+                        type: logEntry.type,
+                        category: 'narrative',
+                        style: {
+                            top: '70%',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                        }
+                    };
+                    setFloatingTexts(current => [...current, newFloatingText]);
+
+                    setTimeout(() => {
+                        setFloatingTexts(current => current.filter(t => t.id !== id));
+                    }, 3900);
+                }, index * 400); // Tunda 400ms antar pesan
+            });
+        }
+        prevEventLogLength.current = eventLog.length;
+    }, [eventLog]);
 
 
     const handleImageLoad = () => {
@@ -187,7 +226,7 @@ const ImagePanel: React.FC = () => {
 
             <div className="floating-text-container">
                 {floatingTexts.map(ft => (
-                    <span key={ft.id} className={`floating-text ${ft.type}`} style={ft.style}>
+                    <span key={ft.id} className={`floating-text ${ft.category} ${ft.type}`} style={ft.style}>
                         {ft.text}
                     </span>
                 ))}

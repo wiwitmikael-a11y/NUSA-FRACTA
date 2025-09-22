@@ -599,16 +599,39 @@
         
         .floating-text-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 3; }
         .floating-text {
-            position: absolute; font-size: 1.5rem; font-weight: bold; text-shadow: 1px 1px 3px black;
-            animation: floatUp 2s ease-out forwards;
+            position: absolute;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px black;
+            white-space: nowrap;
+            text-align: center;
         }
-        .floating-text.enemy-damage { color: white; }
-        .floating-text.player-damage { color: var(--danger-color); }
-        .floating-text.critical { color: var(--accent-color-light); font-size: 2rem; }
-        .floating-text.dodge { color: lightblue; }
-        @keyframes floatUp {
+
+        .floating-text.combat {
+            font-size: 1.5rem;
+            animation: floatUpCombat 2s ease-out forwards;
+        }
+        .floating-text.narrative {
+            font-size: 1.1rem;
+            animation: floatUpNarrative 4s ease-out forwards;
+        }
+
+        .floating-text.combat.enemy-damage { color: white; }
+        .floating-text.combat.player-damage { color: var(--danger-color); }
+        .floating-text.combat.critical { color: var(--accent-color-light); font-size: 2rem; }
+        .floating-text.combat.dodge { color: lightblue; }
+
+        .floating-text.narrative.reward { color: var(--reward-color); }
+        .floating-text.narrative.danger { color: var(--danger-color); }
+        .floating-text.narrative.info { color: var(--text-secondary-color); }
+
+        @keyframes floatUpCombat {
             0% { transform: translateY(0); opacity: 1; }
             100% { transform: translateY(-80px); opacity: 0; }
+        }
+        @keyframes floatUpNarrative {
+            0% { transform: translateY(0) translateX(-50%); opacity: 1; }
+            80% { transform: translateY(-60px) translateX(-50%); opacity: 1; }
+            100% { transform: translateY(-80px) translateX(-50%); opacity: 0; }
         }
         
         /* Loading Overlay */
