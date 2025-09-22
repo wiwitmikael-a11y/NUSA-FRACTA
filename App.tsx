@@ -45,7 +45,7 @@ const App: React.FC = () => {
                 <StatusHUD />
                 <nav>
                     <button onClick={() => setJournalOpen(true)}>Jurnal</button>
-                    <button onClick={() => setCraftingOpen(true)}>Buat</button>
+                    <button onClick={() => setCraftingOpen(true)}>Racik</button>
                     <button onClick={() => setSheetOpen(true)}>Karakter</button>
                     <button onClick={() => setInventoryOpen(true)}>Inventaris</button>
                 </nav>

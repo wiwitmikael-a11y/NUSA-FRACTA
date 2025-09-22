@@ -3,21 +3,26 @@ import type { Player, Enemy, EquipmentSlot, ItemId } from '../types';
 import { codex } from './codex';
 
 export const calculateXpForNextLevel = (level: number): number => {
-    return level * 100;
+    // Kurva XP yang lebih curam untuk progresi jangka panjang
+    return Math.floor(100 * Math.pow(level, 1.5));
 };
 
 export const checkLevelUp = (player: Player): Player => {
     const newPlayer = { ...player };
-    const xpNeeded = calculateXpForNextLevel(newPlayer.level);
-    if (newPlayer.xp >= xpNeeded) {
+    let xpNeeded = calculateXpForNextLevel(newPlayer.level);
+    
+    // Memungkinkan untuk naik beberapa level sekaligus jika XP cukup
+    while (newPlayer.xp >= xpNeeded) {
         newPlayer.level += 1;
         newPlayer.xp -= xpNeeded;
         newPlayer.unspentAttributePoints += 1;
         newPlayer.maxHp += 10;
         newPlayer.hp = newPlayer.maxHp; // Full heal on level up
+        xpNeeded = calculateXpForNextLevel(newPlayer.level);
     }
     return newPlayer;
 };
+
 
 export const calculatePlayerDamage = (player: Player): { damage: number, isCritical: boolean } => {
     const baseDamage = 5;
@@ -50,7 +55,10 @@ export const calculatePlayerDamage = (player: Player): { damage: number, isCriti
         }
     }
     
-    return { damage: Math.round(totalDamage), isCritical };
+    // Menambahkan variasi kerusakan (85% - 115%)
+    const finalDamage = Math.round(totalDamage * (0.85 + Math.random() * 0.30));
+    
+    return { damage: Math.max(1, finalDamage), isCritical };
 };
 
 export const calculatePlayerDefense = (player: Player): number => {
@@ -68,5 +76,7 @@ export const calculatePlayerDefense = (player: Player): number => {
 
 
 export const calculateEnemyDamage = (enemy: Enemy): number => {
-    return Math.max(1, enemy.attack);
+    // Menambahkan variasi kerusakan (85% - 115%)
+    const finalDamage = Math.round(enemy.attack * (0.85 + Math.random() * 0.30));
+    return Math.max(1, finalDamage);
 };

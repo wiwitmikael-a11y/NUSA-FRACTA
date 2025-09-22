@@ -2,11 +2,11 @@
 
 export const assetManifest = {
   backgrounds: {
-    dome: [
-      'bg_dome_01.jpeg',
-      'bg_dome_02.jpeg',
-      'bg_dome_03.jpeg',
-      'bg_dome_04.jpeg',
+    areaTerbuka: [
+      'bg_area_terbuka_01.jpeg',
+      'bg_area_terbuka_02.jpeg',
+      'bg_area_terbuka_03.jpeg',
+      'bg_area_terbuka_04.jpeg',
     ],
     gangSampah: [
       'bg_gang_sampah_01.jpeg',
@@ -20,37 +20,38 @@ export const assetManifest = {
       'bg_hq_republik_03.jpeg',
       'bg_hq_republik_04.jpeg',
     ],
-    jalanRaya: [
-      'bg_jalanraya_01.jpeg',
-      'bg_jalanraya_02.jpeg',
-      'bg_jalanraya_03.jpeg',
+    jalanRayaJembatan: [
+      'bg_jalanraya_jembatan_01.jpeg',
+      'bg_jalanraya_jembatan_02.jpeg',
+      'bg_jalanraya_jembatan_03.jpeg',
+      'bg_jalanraya_jembatan_04.jpeg',
     ],
-    kamar: [
-      'bg_kamar_01.jpeg',
-      'bg_kamar_02.jpeg',
-      'bg_kamar_03.jpeg',
-      'bg_kamar_04.jpeg',
+    ruanganKamarTidur: [
+      'bg_ruangan_kamar_tidur_01.jpeg',
+      'bg_ruangan_kamar_tidur_02.jpeg',
+      'bg_ruangan_kamar_tidur_03.jpeg',
+      'bg_ruangan_kamar_tidur_04.jpeg',
     ],
-    kantorMalam: [
-      'bg_kantor_malam_01.jpeg',
-      'bg_kantor_malam_02.jpeg',
-      'bg_kantor_malam_03.jpeg',
-      'bg_kantor_malam_04.jpeg',
+    kantorKelasRuang: [
+      'bg_kantor_kelas_ruang_01.jpeg',
+      'bg_kantor_kelas_ruang_02.jpeg',
+      'bg_kantor_kelas_ruang_03.jpeg',
+      'bg_kantor_kelas_ruang_04.jpeg',
     ],
-    lab: [
-      'bg_lab_01.jpeg',
-      'bg_lab_02.jpeg',
-      'bg_lab_03.jpeg',
+    labPustakaRiset: [
+      'bg_lab_pustaka_riset_01.jpeg',
+      'bg_lab_pustaka_riset_02.jpeg',
+      'bg_lab_pustaka_riset_03.jpeg',
     ],
-    mall: [
-      'bg_mall_01.jpeg',
-      'bg_mall_02.jpeg',
-      'bg_mall_03.jpeg',
-      'bg_mall_04.jpeg',
+    malLobiAula: [
+      'bg_mal_lobi_balkon_aula_01.jpeg',
+      'bg_mal_lobi_balkon_aula_02.jpeg',
+      'bg_mal_lobi_balkon_aula_03.jpeg',
+      'bg_mal_lobi_balkon_aula_04.jpeg',
     ],
-    monumen: [
-      'bg_monumen_01.jpeg',
-      'bg_monumen_02.jpeg',
+    monumenPuing: [
+      'bg_monumen_puing_reruntuhan_01.jpeg',
+      'bg_monumen_puing_reruntuhan_02.jpeg',
     ],
     pasarSaudagar: [
       'bg_pasar_saudagar_01.jpeg',
@@ -58,17 +59,17 @@ export const assetManifest = {
       'bg_pasar_saudagar_03.jpeg',
       'bg_pasar_saudagar_04.jpeg',
     ],
-    relMrt: [
-      'bg_rel_mrt_01.jpeg',
-      'bg_rel_mrt_02.jpeg',
-      'bg_rel_mrt_03.jpeg',
-      'bg_rel_mrt_04.jpeg',
+    relMrtKereta: [
+      'bg_rel_mrt_kereta_lorong_01.jpeg',
+      'bg_rel_mrt_kereta_lorong_02.jpeg',
+      'bg_rel_mrt_kereta_lorong_03.jpeg',
+      'bg_rel_mrt_kereta_lorong_04.jpeg',
     ],
-    stadion: [
-      'bg_stadion_01.jpeg',
-      'bg_stadion_02.jpeg',
-      'bg_stadion_03.jpeg',
-      'bg_stadion_04.jpeg',
+    stadionGudang: [
+      'bg_stadion_gudang_logistik_01.jpeg',
+      'bg_stadion_gudang_logistik_02.jpeg',
+      'bg_stadion_gudang_logistik_03.jpeg',
+      'bg_stadion_gudang_logistik_04.jpeg',
     ],
     stasiunMrt: [
       'bg_stasiun_mrt_01.jpeg',
@@ -82,17 +83,17 @@ export const assetManifest = {
       'bg_taman_kota_03.jpeg',
       'bg_taman_kota_04.jpeg',
     ],
-    tendaSurvivor: [
-      'bg_tenda_survivor_01.jpeg',
-      'bg_tenda_survivor_02.jpeg',
-      'bg_tenda_survivor_03.jpeg',
-      'bg_tenda_survivor_04.jpeg',
+    tendaMarkasSurvivor: [
+      'bg_tenda_alun_alun_markas_survivor_01.jpeg',
+      'bg_tenda_alun_alun_markas_survivor_02.jpeg',
+      'bg_tenda_alun_alun_markas_survivor_03.jpeg',
+      'bg_tenda_alun_alun_markas_survivor_04.jpeg',
     ],
-    warmindo: [
-      'bg_warmindo_01.jpeg',
-      'bg_warmindo_02.jpeg',
-      'bg_warmindo_03.jpeg',
-      'bg_warmindo_04.jpeg',
+    warungMakan: [
+      'bg_warung_makan_01.jpeg',
+      'bg_warung_makan_02.jpeg',
+      'bg_warung_makan_03.jpeg',
+      'bg_warung_makan_04.jpeg',
     ],
   },
   npcPortraits: {

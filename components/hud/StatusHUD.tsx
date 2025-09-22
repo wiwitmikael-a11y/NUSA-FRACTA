@@ -1,11 +1,12 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store/store';
+import { calculateXpForNextLevel } from '../../core/gameRules';
 
 const StatusHUD: React.FC = () => {
     const player = useSelector((state: RootState) => state.game.player);
     const hpPercentage = player.maxHp > 0 ? (player.hp / player.maxHp) * 100 : 0;
-    const nextLevelXp = player.level * 100;
+    const nextLevelXp = calculateXpForNextLevel(player.level);
     const xpPercentage = nextLevelXp > 0 ? (player.xp / nextLevelXp) * 100 : 0;
 
     return (
@@ -16,7 +17,7 @@ const StatusHUD: React.FC = () => {
                 </div>
             )}
             <div className="player-info">
-                <div className="player-name">{player.name} | Lvl {player.level}</div>
+                <div className="player-name">{player.name} | Lvl {player.level} | {player.skrip} Skrip</div>
                 <div className="hud-bars">
                     <div className="hp-bar-container">
                         <div className="hp-bar" style={{ width: `${hpPercentage}%` }}></div>

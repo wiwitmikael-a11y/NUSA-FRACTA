@@ -3,6 +3,7 @@ import type { Codex } from '../types';
 
 export const codex: Codex = {
   items: {
+    // SENJATA MELEE
     'pipa_besi': { 
       name: 'Pipa Besi', 
       description: 'Sebatang pipa besi berkarat. Lebih baik daripada tangan kosong.', 
@@ -11,11 +12,6 @@ export const codex: Codex = {
       effects: [{ type: 'SKILL_BONUS', key: 'flat_damage_bonus', value: 3 }],
       value: 25 
     },
-    'perban': { name: 'Perban', description: 'Kain kasa steril untuk membalut luka. Memulihkan sedikit HP.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 25 }], value: 20 },
-    'air_kemasan': { name: 'Air Kemasan', description: 'Air minum bersih, barang langka di dunia ini.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 10 }], value: 30 },
-    'keripik_basi': { name: 'Keripik Basi', description: 'Rasanya aneh, tapi lebih baik daripada kelaparan.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 5 }], value: 5 },
-    'komponen_elektronik': { name: 'Komponen Elektronik', description: 'Rangkaian sirkuit dan kabel yang bisa digunakan untuk kerajinan.', type: 'material', value: 15 },
-    'kain_bekas': { name: 'Kain Bekas', description: 'Potongan kain usang, bisa dirajut menjadi sesuatu yang berguna.', type: 'material', value: 10 },
     'kunci_inggris': { 
       name: 'Kunci Inggris', 
       description: 'Alat serbaguna untuk reparasi... atau pertahanan diri.', 
@@ -24,7 +20,32 @@ export const codex: Codex = {
       effects: [{ type: 'SKILL_BONUS', key: 'flat_damage_bonus', value: 5 }], 
       value: 40 
     },
-    'artefak_aneh': { name: 'Artefak Aneh', description: 'Benda logam aneh yang berdengung pelan. Mungkin berharga bagi seseorang.', type: 'misc', value: 100 },
+    'pisau_dapur': {
+        name: 'Pisau Dapur',
+        description: 'Tajam dan cepat, tapi tidak terlalu kokoh.',
+        type: 'weapon',
+        equipmentSlot: 'meleeWeapon',
+        effects: [{ type: 'SKILL_BONUS', key: 'flat_damage_bonus', value: 4 }],
+        value: 30
+    },
+    'bat_baseball': {
+        name: 'Bat Baseball Kayu',
+        description: 'Peninggalan olahraga dari masa lalu. Pukulan yang solid.',
+        type: 'weapon',
+        equipmentSlot: 'meleeWeapon',
+        effects: [{ type: 'SKILL_BONUS', key: 'flat_damage_bonus', value: 6 }],
+        value: 55
+    },
+    'golok': {
+        name: 'Golok',
+        description: 'Senjata tebas serbaguna, bagus untuk pertarungan dan membelah semak-semak.',
+        type: 'weapon',
+        equipmentSlot: 'meleeWeapon',
+        effects: [{ type: 'SKILL_BONUS', key: 'flat_damage_bonus', value: 8 }],
+        value: 80
+    },
+
+    // ARMOR
     'jaket_kulit_usang': {
       name: 'Jaket Kulit Usang',
       description: 'Jaket kulit tebal yang telah melihat hari-hari yang lebih baik. Memberikan sedikit perlindungan.',
@@ -32,7 +53,46 @@ export const codex: Codex = {
       equipmentSlot: 'armor',
       effects: [{ type: 'SKILL_BONUS', key: 'damage_resistance', value: 2 }],
       value: 60,
-    }
+    },
+    'rompi_improvisasi': {
+      name: 'Rompi Improvisasi',
+      description: 'Terbuat dari potongan ban dan logam. Berat tapi fungsional.',
+      type: 'armor',
+      equipmentSlot: 'armor',
+      effects: [{ type: 'SKILL_BONUS', key: 'damage_resistance', value: 4 }],
+      value: 100,
+    },
+     'rompi_balistik_rusak': {
+      name: 'Rompi Balistik Rusak',
+      description: 'Rompi polisi atau tentara yang sudah usang. Beberapa pelat keramiknya retak, tapi masih memberikan perlindungan yang layak.',
+      type: 'armor',
+      equipmentSlot: 'armor',
+      effects: [{ type: 'SKILL_BONUS', key: 'damage_resistance', value: 6 }],
+      value: 180,
+    },
+
+    // KONSUMSI
+    'perban': { name: 'Perban', description: 'Kain kasa steril untuk membalut luka. Memulihkan sedikit HP.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 25 }], value: 20 },
+    'air_kemasan': { name: 'Air Kemasan', description: 'Air minum bersih, barang langka di dunia ini.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 10 }], value: 30 },
+    'keripik_basi': { name: 'Keripik Basi', description: 'Rasanya aneh, tapi lebih baik daripada kelaparan.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 5 }], value: 5 },
+    'makanan_kaleng': { name: 'Makanan Kaleng', description: 'Sarden atau kornet dari dunia lama. Memulihkan HP dalam jumlah sedang.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 40 }], value: 50 },
+    'kopi_instan': { name: 'Kopi Instan', description: 'Secangkir semangat di dunia yang lelah. Menghilangkan rasa kantuk untuk sementara.', type: 'consumable', effects: [], value: 15 }, // Efek mungkin ditambahkan di masa depan
+    'stimulan': { name: 'Stimulan Kimia', description: 'Suntikan peningkat adrenalin. Memulihkan banyak HP, tapi mungkin ada efek samping.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 75 }], value: 120 },
+
+
+    // MATERIAL KERAJINAN
+    'komponen_elektronik': { name: 'Komponen Elektronik', description: 'Rangkaian sirkuit dan kabel yang bisa digunakan untuk kerajinan.', type: 'material', value: 15 },
+    'kain_bekas': { name: 'Kain Bekas', description: 'Potongan kain usang, bisa dirajut menjadi sesuatu yang berguna.', type: 'material', value: 10 },
+    'selotip': { name: 'Selotip', description: 'Penyelamat di dunia pasca-keruntuhan. Bisa merekatkan hampir semua hal.', type: 'material', value: 12 },
+    'sekrup_baut': { name: 'Sekrup & Baut', description: 'Kumpulan pengencang logam dari berbagai ukuran.', type: 'material', value: 8 },
+    'baterai_bekas': { name: 'Baterai Bekas', description: 'Masih memiliki sedikit daya. Mungkin bisa menghidupkan sesuatu.', type: 'material', value: 20 },
+    'plastik_bekas': { name: 'Plastik Bekas', description: 'Potongan-potongan plastik dari botol atau wadah. Bisa dilebur dan dibentuk ulang.', type: 'material', value: 5 },
+
+
+    // MISC & QUEST
+    'artefak_aneh': { name: 'Artefak Aneh', description: 'Benda logam aneh yang berdengung pelan. Mungkin berharga bagi seseorang.', type: 'misc', value: 100 },
+    'kunci_gudang': { name: 'Kunci Gudang', description: 'Kunci berkarat dengan label "Gudang B-03".', type: 'key', value: 0 },
+    'data_chip': { name: 'Data Chip', description: 'Sebuah chip penyimpanan data. Isinya tidak diketahui.', type: 'misc', value: 150 },
   },
   skills: {
     'petarung_brutal': {
@@ -219,7 +279,10 @@ export const codex: Codex = {
         attack: 18,
         defense: 3,
         xpValue: 35,
-        lootTable: [{ itemId: 'komponen_elektronik', chance: 0.3, quantity: [1, 2] }],
+        lootTable: [
+          { itemId: 'komponen_elektronik', chance: 0.3, quantity: [1, 2] },
+          { itemId: 'baterai_bekas', chance: 0.2, quantity: [1, 1] },
+        ],
         skripDrop: [10, 25],
     },
     'anomali_jamur': {
@@ -229,7 +292,10 @@ export const codex: Codex = {
         attack: 10,
         defense: 10,
         xpValue: 50,
-        lootTable: [{ itemId: 'perban', chance: 0.2, quantity: [1, 1] }],
+        lootTable: [
+            { itemId: 'perban', chance: 0.2, quantity: [1, 1] },
+            { itemId: 'makanan_kaleng', chance: 0.1, quantity: [1, 1] },
+        ],
         skripDrop: [30, 60],
     },
     'ratu_anomali': {
@@ -239,7 +305,10 @@ export const codex: Codex = {
         attack: 25,
         defense: 15,
         xpValue: 200,
-        lootTable: [], // Boss loot
+        lootTable: [
+            { itemId: 'stimulan', chance: 1, quantity: [1, 2] },
+            { itemId: 'data_chip', chance: 0.5, quantity: [1, 1] },
+        ],
         skripDrop: [150, 300],
     },
   },
@@ -248,6 +317,15 @@ export const codex: Codex = {
         name: 'Perban Darurat',
         result: { itemId: 'perban', quantity: 1 },
         ingredients: [{ itemId: 'kain_bekas', quantity: 2 }],
+    },
+    'rompi_rakitan': {
+        name: 'Rompi Rakitan',
+        result: { itemId: 'rompi_improvisasi', quantity: 1 },
+        ingredients: [
+            { itemId: 'plastik_bekas', quantity: 5 },
+            { itemId: 'selotip', quantity: 2 },
+            { itemId: 'kain_bekas', quantity: 3 },
+        ],
     },
   },
   quests: {

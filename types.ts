@@ -60,8 +60,8 @@ export interface ChoiceCondition {
 
 export interface ChoiceEffect {
     type: 'GAIN_ITEM' | 'LOSE_ITEM' | 'GAIN_XP' | 'CHANGE_HP' | 'SET_FLAG' | 'START_COMBAT';
-    key: ItemId | QuestId | EnemyId;
-    value: number;
+    key?: ItemId | QuestId | EnemyId;
+    value?: number;
     message: string;
 }
 

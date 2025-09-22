@@ -8,7 +8,7 @@ export const initialGameState: GameState = {
     xp: 0,
     level: 1,
     unspentAttributePoints: 1, // Start with 1 point
-    inventory: [{ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'perban', quantity: 2}],
+    inventory: [],
     equippedItems: {},
     reputation: {
       'sisa_kemanusiaan': 0,

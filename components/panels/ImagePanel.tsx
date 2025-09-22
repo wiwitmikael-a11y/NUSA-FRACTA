@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 import { attack, flee } from '../../store/gameSlice';
 import { codex } from '../../core/codex';
-import { getImageUrlForLocation } from '../../services/assetService';
+import { getImageUrlForLocation, getEnemyImageUrl } from '../../services/assetService';
 
 interface FloatingText {
     id: number;
@@ -15,6 +15,7 @@ interface FloatingText {
 const ImagePanel: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
     const {
+        player,
         isInCombat,
         currentEnemyId,
         enemyCurrentHp,
@@ -54,7 +55,6 @@ const ImagePanel: React.FC = () => {
 
     useEffect(() => {
         const newUrl = getImageUrlForLocation(currentLocation);
-
         if (newUrl !== imageUrl) {
             setIsLoading(true);
             setImageUrl(newUrl);
@@ -125,25 +125,9 @@ const ImagePanel: React.FC = () => {
 
     const enemy = currentEnemyId ? codex.enemies[currentEnemyId] : null;
     const enemyHpPercentage = (enemy && enemy.hp > 0) ? (enemyCurrentHp / enemy.hp) * 100 : 0;
+    const playerHpPercentage = (player.maxHp > 0) ? (player.hp / player.maxHp) * 100 : 0;
+    const enemyImageUrl = currentEnemyId ? getEnemyImageUrl(currentEnemyId) : null;
 
-    const renderCombatOverlay = () => {
-        if (!isInCombat || !enemy) return null;
-        return (
-            <div className="combat-overlay">
-                <div className="enemy-status-overlay">
-                    <h4>{enemy.name}</h4>
-                    <div className="enemy-hp-bar-container">
-                        <div className="enemy-hp-bar" style={{ width: `${enemyHpPercentage}%` }}></div>
-                    </div>
-                    <small>{enemyCurrentHp} / {enemy.hp} HP</small>
-                </div>
-                <div className="combat-actions-overlay">
-                    <button onClick={handleAttack}>Serang</button>
-                    <button onClick={handleFlee}>Kabur</button>
-                </div>
-            </div>
-        );
-    };
 
     if (!imageUrl) {
         return <div className="panel image-panel placeholder">{currentLocation || ''}</div>;
@@ -163,7 +147,36 @@ const ImagePanel: React.FC = () => {
             
             <div className={`atmospheric-overlay ${overlayClass} ${overlayClass ? 'visible' : ''}`}></div>
 
-            {renderCombatOverlay()}
+            {isInCombat && enemy && (
+                <div className="combat-view-container">
+                    {/* Player Info */}
+                    <div className="combatant-info player-combatant">
+                         {player.portraitUrl && <img src={player.portraitUrl} alt="Player" className="combatant-portrait player" />}
+                         <h4>{player.name}</h4>
+                         <div className="combatant-hp-bar-container">
+                            <div className="combatant-hp-bar player" style={{ width: `${playerHpPercentage}%` }}></div>
+                            <div className="combatant-hp-text">{player.hp} / {player.maxHp}</div>
+                         </div>
+                    </div>
+
+                    {/* Combat Actions */}
+                    <div className="combat-actions-center">
+                        <button onClick={handleAttack}>Serang</button>
+                        <button onClick={handleFlee}>Kabur</button>
+                    </div>
+
+                    {/* Enemy Info */}
+                    <div className="combatant-info enemy-combatant">
+                         {enemyImageUrl && <img src={enemyImageUrl} alt={enemy.name} className="combatant-portrait enemy" />}
+                         <h4>{enemy.name}</h4>
+                         <div className="combatant-hp-bar-container">
+                            <div className="combatant-hp-bar enemy" style={{ width: `${enemyHpPercentage}%` }}></div>
+                            <div className="combatant-hp-text">{enemyCurrentHp} / {enemy.hp}</div>
+                         </div>
+                    </div>
+                </div>
+            )}
+
 
             <div className="floating-text-container">
                 {floatingTexts.map(ft => (

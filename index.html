@@ -421,16 +421,122 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Combat */
-        .combat-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            display: flex; flex-direction: column; justify-content: space-between;
-            padding: 1rem; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 50%);
+        /* Responsive Combat UI Revamp */
+        .combat-view-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 60%);
+            pointer-events: none;
         }
-        .enemy-status-overlay { text-align: center; color: white; text-shadow: 1px 1px 3px black; }
-        .enemy-hp-bar-container { width: 80%; max-width: 300px; margin: 0.5rem auto; background: #2a2a2a; border: 1px solid white; height: 15px; }
-        .enemy-hp-bar { background: var(--danger-color); height: 100%; transition: width 0.3s; }
-        .combat-actions-overlay { display: flex; justify-content: center; gap: 1rem; }
+        .combatant-info {
+            flex: 1 1 30%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 200px;
+            color: white;
+            text-shadow: 1px 1px 3px black;
+        }
+        .combatant-info h4 {
+            margin: 0.5rem 0;
+            color: white;
+            font-size: 1rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+        .combatant-hp-bar-container {
+            width: 100%;
+            height: 20px;
+            background: #2a2a2a;
+            border: 1px solid white;
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+        .combatant-hp-bar {
+            height: 100%;
+            transition: width 0.3s;
+        }
+        .combatant-hp-bar.player { background-color: var(--reward-color); }
+        .combatant-hp-bar.enemy { background-color: var(--danger-color); }
+        .combatant-hp-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .combatant-portrait {
+            width: 100%;
+            max-width: 120px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            background-color: rgba(0,0,0,0.5);
+            order: -1;
+        }
+        .combatant-portrait.player { border: 3px solid var(--accent-color); }
+        .combatant-portrait.enemy { border: 3px solid var(--danger-color); }
+        
+        .combat-actions-center {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-shrink: 0;
+            pointer-events: auto;
+        }
+        .combat-actions-center button {
+            padding: 0.5rem 1.5rem;
+        }
+
+        /* Media Query for Mobile */
+        @media (max-width: 600px) {
+            .combat-view-container {
+                padding: 0.5rem;
+                gap: 0.25rem;
+            }
+            .combatant-info {
+                max-width: 120px;
+            }
+            .combatant-info h4 {
+                font-size: 0.8rem;
+            }
+            .combatant-hp-bar-container {
+                height: 16px;
+            }
+            .combatant-hp-text {
+                font-size: 0.7rem;
+            }
+            .combat-actions-center {
+                margin-bottom: 1rem;
+            }
+            .combat-actions-center button {
+                padding: 0.4rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .combatant-info {
+                max-width: 90px;
+            }
+            .combatant-info h4 {
+               white-space: normal;
+               font-size: 0.7rem;
+            }
+        }
         
         .floating-text-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; }
         .floating-text {

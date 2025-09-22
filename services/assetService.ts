@@ -1,6 +1,6 @@
 // services/assetService.ts
 import { assetManifest } from '../core/assetManifest';
-import { FactionId } from '../types';
+import { FactionId, EnemyId } from '../types';
 
 const BACKGROUND_BASE_URL = 'https://raw.githubusercontent.com/wiwitmikael-a11y/nusa-FRACTA-assets/main/backgrounds';
 const PORTRAIT_BASE_URL = 'https://raw.githubusercontent.com/wiwitmikael-a11y/nusa-FRACTA-assets/main/portraits';
@@ -8,110 +8,136 @@ const PORTRAIT_BASE_URL = 'https://raw.githubusercontent.com/wiwitmikael-a11y/nu
 type AssetKey = keyof typeof assetManifest.backgrounds;
 
 // Peta yang diperluas untuk mencocokkan lokasi spesifik dengan kategori gambar.
-// Tambahkan nama lokasi yang sering muncul dari AI di sini.
 const locationToAssetKey: { [key: string]: AssetKey } = {
-    // Jalan & Luar Ruangan
-    'Jalan Jenderal Sudirman': 'jalanRaya',
-    'Jalan Tol Terbengkalai': 'jalanRaya',
-    'Halte Bus TransJakarta': 'jalanRaya',
-    'Jalan Layang Runtuh': 'relMrt',
-    'Jembatan Penyeberangan Orang (JPO)': 'relMrt',
-    'Sekitar Bundaran HI': 'monumen',
-    'Api Unggun Bundaran HI': 'monumen',
-    'Reruntuhan Monas': 'monumen',
+    // Exact matches updated to new keys
+    'Jalan Jenderal Sudirman': 'jalanRayaJembatan',
+    'Jalan Tol Terbengkalai': 'jalanRayaJembatan',
+    'Halte Bus TransJakarta': 'jalanRayaJembatan',
+    'Jalan Layang Runtuh': 'jalanRayaJembatan',
+    'Jembatan Penyeberangan Orang (JPO)': 'jalanRayaJembatan',
+    'Sekitar Bundaran HI': 'monumenPuing',
+    'Api Unggun Bundaran HI': 'monumenPuing',
+    'Reruntuhan Monas': 'monumenPuing',
     'Taman Kota Rusak': 'tamanKota',
-    'Alun-alun Terbengkalai': 'stadion',
-    'Stadion Utama Gelora Bung Karno': 'stadion',
-
-    // Bangunan & Interior
-    'Lobi Gedung Perkantoran': 'kantorMalam',
-    'Meja Resepsionis Lobi': 'kantorMalam',
-    'Ruang Kantor Lantai 2': 'kantorMalam',
-    'Koridor Lantai 3': 'kantorMalam',
-    'Gedung Pencakar Langit': 'kantorMalam',
-    'Pusat Perbelanjaan Hancur': 'mall',
-    'Plaza Runtuh': 'mall',
-    'Supermarket Terjarah': 'mall',
-    'Pantry Lantai 3': 'warmindo',
-    'Warung Kopi Darurat': 'warmindo',
-    'Kamar Apartemen': 'kamar',
-    'Kamar Tidur Terbengkalai': 'kamar',
-    'Ruang Keamanan': 'lab',
-    'Laboratorium Medis': 'lab',
-    'Klinik Darurat': 'lab',
-    
-    // Area Spesifik & Pemukiman
+    'Alun-alun Terbengkalai': 'tendaMarkasSurvivor',
+    'Stadion Utama Gelora Bung Karno': 'stadionGudang',
+    'Lobi Gedung Perkantoran': 'kantorKelasRuang',
+    'Meja Resepsionis Lobi': 'kantorKelasRuang',
+    'Ruang Kantor Lantai 2': 'kantorKelasRuang',
+    'Koridor Lantai 3': 'kantorKelasRuang',
+    'Gedung Pencakar Langit': 'kantorKelasRuang',
+    'Pusat Perbelanjaan Hancur': 'malLobiAula',
+    'Plaza Runtuh': 'malLobiAula',
+    'Supermarket Terjarah': 'malLobiAula',
+    'Pantry Lantai 3': 'warungMakan',
+    'Warung Kopi Darurat': 'warungMakan',
+    'Kamar Apartemen': 'ruanganKamarTidur',
+    'Kamar Tidur Terbengkalai': 'ruanganKamarTidur',
+    'Ruang Keamanan': 'labPustakaRiset',
+    'Laboratorium Medis': 'labPustakaRiset',
+    'Klinik Darurat': 'labPustakaRiset',
     'Gang Gelap': 'gangSampah',
     'Lorong Belakang Penuh Sampah': 'gangSampah',
     'Area Kumuh': 'gangSampah',
     'Stasiun MRT Bawah Tanah': 'stasiunMrt',
-    'Rel MRT Layang': 'relMrt',
+    'Rel MRT Layang': 'relMrtKereta',
     'Tangga Darurat': 'stasiunMrt',
-    'Kamp Pengungsian': 'tendaSurvivor',
-    'Pemukiman Sisa Kemanusiaan': 'tendaSurvivor',
-    'Tenda Medis': 'tendaSurvivor',
+    'Kamp Pengungsian': 'tendaMarkasSurvivor',
+    'Pemukiman Sisa Kemanusiaan': 'tendaMarkasSurvivor',
+    'Tenda Medis': 'tendaMarkasSurvivor',
     'Pasar Gelap': 'pasarSaudagar',
     'Bazar Puing': 'pasarSaudagar',
     'Markas Republik Merdeka': 'hqRepublik',
-    'Kubah Teknokrat': 'dome',
-    'Atap Gedung': 'relMrt',
+    'Atap Gedung': 'relMrtKereta',
 };
 
 // Peta kata kunci yang lebih komprehensif untuk pencocokan yang lebih luas.
 const keywordToAssetKey: { [keyword: string]: AssetKey } = {
-    // Jalan & Transportasi
-    'jalan': 'jalanRaya',
-    'raya': 'jalanRaya',
-    'halte': 'jalanRaya',
-    'aspal': 'jalanRaya',
-    'jembatan': 'relMrt',
-    'layang': 'relMrt',
-    'rel': 'relMrt',
-    'mrt': 'stasiunMrt',
-    'stasiun': 'stasiunMrt',
-    'kereta': 'stasiunMrt',
+    // Area Terbuka
+    'terbuka': 'areaTerbuka',
+    'lapangan': 'areaTerbuka',
+    'luar': 'areaTerbuka',
     
-    // Bangunan
-    'kantor': 'kantorMalam',
-    'lobi': 'kantorMalam',
-    'gedung': 'kantorMalam',
-    'ruang': 'kantorMalam', // Umum, tapi seringnya kantor
-    'menara': 'kantorMalam',
-    'plaza': 'mall',
-    'mall': 'mall',
-    'supermarket': 'mall',
-    'toko': 'mall',
-    'apartemen': 'kamar',
-    'kamar': 'kamar',
-    'laboratorium': 'lab',
-    'lab': 'lab',
-    'klinik': 'lab',
-    'server': 'lab',
+    // Jalan & Transportasi
+    'jalan': 'jalanRayaJembatan',
+    'raya': 'jalanRayaJembatan',
+    'jembatan': 'jalanRayaJembatan',
+    'tol': 'jalanRayaJembatan',
+    'aspal': 'jalanRayaJembatan',
+    'halte': 'jalanRayaJembatan',
+    'layang': 'jalanRayaJembatan',
+    'jpo': 'jalanRayaJembatan',
+    'rel': 'relMrtKereta',
+    'kereta': 'relMrtKereta',
+    'stasiun': 'stasiunMrt',
+    'mrt': 'stasiunMrt',
+    'peron': 'stasiunMrt',
+    
+    // Bangunan & Interior
+    'kantor': 'kantorKelasRuang',
+    'kelas': 'kantorKelasRuang',
+    'gedung': 'kantorKelasRuang',
+    'menara': 'kantorKelasRuang',
+    'lobi': 'malLobiAula',
+    'balkon': 'malLobiAula',
+    'aula': 'malLobiAula',
+    'mal': 'malLobiAula',
+    'plaza': 'malLobiAula',
+    'supermarket': 'malLobiAula',
+    'toko': 'malLobiAula',
+    'eskalator': 'malLobiAula',
+    'kamar': 'ruanganKamarTidur',
+    'ruangan': 'ruanganKamarTidur',
+    'tidur': 'ruanganKamarTidur',
+    'apartemen': 'ruanganKamarTidur',
+    'koridor': 'relMrtKereta', // Koridor & lorong MRT cocok
+    'lorong': 'relMrtKereta',
+    'pantry': 'warungMakan',
+    'laboratorium': 'labPustakaRiset',
+    'lab': 'labPustakaRiset',
+    'pustaka': 'labPustakaRiset',
+    'riset': 'labPustakaRiset',
+    'klinik': 'labPustakaRiset',
+    'server': 'labPustakaRiset',
+    'rumah sakit': 'labPustakaRiset',
     
     // Area Pemukiman & Sosial
     'pasar': 'pasarSaudagar',
     'saudagar': 'pasarSaudagar',
     'bazar': 'pasarSaudagar',
-    'warung': 'warmindo',
-    'kafe': 'warmindo',
+    'kios': 'pasarSaudagar',
+    'warung': 'warungMakan',
+    'makan': 'warungMakan',
+    'kafe': 'warungMakan',
+    'dapur': 'warungMakan',
     'gang': 'gangSampah',
-    'lorong': 'gangSampah',
     'kumuh': 'gangSampah',
-    'kamp': 'tendaSurvivor',
-    'tenda': 'tendaSurvivor',
-    'pemukiman': 'tendaSurvivor',
+    'selokan': 'gangSampah',
+    'sampah': 'gangSampah',
+    'tenda': 'tendaMarkasSurvivor',
+    'kamp': 'tendaMarkasSurvivor',
+    'pemukiman': 'tendaMarkasSurvivor',
+    'alun-alun': 'tendaMarkasSurvivor',
+    'survivor': 'tendaMarkasSurvivor',
     'markas': 'hqRepublik',
     'republik': 'hqRepublik',
-    'kubah': 'dome',
-    'dome': 'dome',
+    'pos jaga': 'hqRepublik',
+    'barak': 'hqRepublik',
     
-    // Area Terbuka
-    'monumen': 'monumen',
-    'bundaran': 'monumen',
-    'stadion': 'stadion',
-    'arena': 'stadion',
+    // Area Terbuka & Alam & Reruntuhan
+    'monumen': 'monumenPuing',
+    'bundaran': 'monumenPuing',
+    'patung': 'monumenPuing',
+    'puing': 'monumenPuing',
+    'reruntuhan': 'monumenPuing',
+    'stadion': 'stadionGudang',
+    'gudang': 'stadionGudang',
+    'logistik': 'stadionGudang',
+    'arena': 'stadionGudang',
     'taman': 'tamanKota',
-    'atap': 'relMrt', // Pemandangan dari atap seringkali mirip pemandangan dari rel layang
+    'pohon': 'tamanKota',
+    'danau': 'tamanKota',
+    'atap': 'jalanRayaJembatan',
 };
 
 const getRandomImage = (imageArray: string[]): string | null => {
@@ -144,6 +170,13 @@ export const getImageUrlForLocation = (location: string): string | null => {
     }
     
     console.warn(`No image asset key found for location: ${location}`);
+    // Fallback to a generic outdoor scene if no match is found
+    const fallbackImages = assetManifest.backgrounds['jalanRayaJembatan'];
+    const fallbackImageName = getRandomImage(fallbackImages);
+    if(fallbackImageName) {
+        return `${BACKGROUND_BASE_URL}/${fallbackImageName}`;
+    }
+
     return null; 
 };
 
@@ -183,3 +216,26 @@ export const getFactionImageUrl = (factionId: FactionId): string | null => {
     console.warn(`Could not find image for faction: ${factionId}. Falling back to generic NPC.`);
     return getNpcImageUrl();
 };
+
+export const getEnemyImageUrl = (enemyId: EnemyId): string | null => {
+    let images: string[] | undefined;
+    const lowerEnemyId = enemyId.toLowerCase();
+
+    if (lowerEnemyId.includes('anomali')) {
+        images = assetManifest.enemyPortraits.anomali;
+    } else if (lowerEnemyId.includes('preman') || lowerEnemyId.includes('perampok')) {
+        images = assetManifest.enemyPortraits.raider;
+    } else {
+        // Fallback for other types or unmatched IDs
+        images = assetManifest.enemyPortraits.raider;
+        console.warn(`No specific enemy portrait category for ${enemyId}, falling back to raider.`);
+    }
+    
+    const imageName = getRandomImage(images);
+    if (imageName) {
+        return `${PORTRAIT_BASE_URL}/${imageName}`;
+    }
+
+    console.error(`Could not find any image for enemy ID: ${enemyId}`);
+    return null;
+}

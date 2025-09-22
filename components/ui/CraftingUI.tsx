@@ -25,7 +25,7 @@ const CraftingUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <h2>Buat Item</h2>
+                <h2>Racik Item</h2>
                 <button onClick={onClose} className="close-button">X</button>
                 <ul className="crafting-list">
                     {Object.values(codex.recipes).map((recipe, index) => {
@@ -45,7 +45,7 @@ const CraftingUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen
                                     disabled={!isCraftable}
                                     onClick={() => handleCraft(recipe)}
                                 >
-                                    Buat
+                                    Racik
                                 </button>
                             </li>
                         );

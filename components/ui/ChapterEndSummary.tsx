@@ -1,25 +1,24 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
-import { closeChapterEndModal } from '../../store/gameSlice';
+import { startNextChapter } from '../../store/gameSlice';
 
 const ChapterEndSummary: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
     const dispatch = useDispatch<AppDispatch>();
-    const { player, eventLog } = useSelector((state: RootState) => state.game);
+    const { eventLog } = useSelector((state: RootState) => state.game);
 
-    if (!isOpen) return null;
-
-    const handleClose = () => {
-        // In a real multi-chapter game, this would trigger loading the next chapter.
-        // For now, it just closes.
-        dispatch(closeChapterEndModal());
-        alert("Bab ini telah berakhir. Nantikan kelanjutan petualanganmu!");
-    };
-
+    // Moved this hook before the conditional return to respect the Rules of Hooks.
     const finalNodeNarrative = useSelector((state: RootState) => {
         const node = state.game.currentChapter?.nodes.find(n => n.nodeId === state.game.currentNodeId);
         return node?.narrative || "Petualanganmu mencapai titik penting.";
     });
+
+    if (!isOpen) return null;
+
+    const handleContinue = () => {
+        // Memicu thunk untuk menghasilkan dan memulai bab berikutnya.
+        dispatch(startNextChapter());
+    };
 
     return (
         <div className="modal-overlay">
@@ -30,15 +29,15 @@ const ChapterEndSummary: React.FC<{ isOpen: boolean }> = ({ isOpen }) => {
                 <div className="summary-section">
                     <h4>Ringkasan Bab:</h4>
                     <ul>
-                        {eventLog.map(log => (
+                        {eventLog.slice(-10).map(log => ( // Tampilkan 10 event terakhir
                             <li key={log.id} className={log.type}>{log.message}</li>
                         ))}
                         {eventLog.length === 0 && <li>Tidak ada peristiwa penting yang tercatat.</li>}
                     </ul>
                 </div>
 
-                <button onClick={handleClose} className="submit-button" style={{width: '100%', textAlign: 'center'}}>
-                    Lanjutkan
+                <button onClick={handleContinue} className="submit-button" style={{width: '100%', textAlign: 'center'}}>
+                    Lanjutkan Petualangan
                 </button>
             </div>
         </div>
