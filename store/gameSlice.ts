@@ -299,6 +299,25 @@ const gameSlice = createSlice({
                             state.isChapterEndModalOpen = true;
                         } else {
                             triggerRandomEvent(state);
+                            // --- NEW: Scavenging Mechanic ---
+                            if (!state.currentRandomEvent && !state.isInCombat && Math.random() < 0.20) {
+                                const scavengeableItems: ItemId[] = ['kain_bekas', 'keripik_basi', 'sekrup_baut', 'plastik_bekas', 'selotip'];
+                                const foundItemId = scavengeableItems[Math.floor(Math.random() * scavengeableItems.length)];
+                                const itemData = codex.items[foundItemId];
+
+                                const existingItem = state.player.inventory.find(i => i.itemId === foundItemId);
+                                if (existingItem) {
+                                    existingItem.quantity += 1;
+                                } else {
+                                    state.player.inventory.push({ itemId: foundItemId, quantity: 1 });
+                                }
+
+                                state.eventLog.push({ 
+                                    id: `scavenge-${Date.now()}`, 
+                                    message: `Saat berjalan, kamu menemukan: ${itemData.name}.`, 
+                                    type: 'info' 
+                                });
+                            }
                         }
                     }
                 } else {
@@ -325,6 +344,25 @@ const gameSlice = createSlice({
                         state.isChapterEndModalOpen = true;
                     } else {
                         triggerRandomEvent(state);
+                         // --- NEW: Scavenging Mechanic ---
+                        if (!state.currentRandomEvent && !state.isInCombat && Math.random() < 0.20) {
+                            const scavengeableItems: ItemId[] = ['kain_bekas', 'keripik_basi', 'sekrup_baut', 'plastik_bekas', 'selotip'];
+                            const foundItemId = scavengeableItems[Math.floor(Math.random() * scavengeableItems.length)];
+                            const itemData = codex.items[foundItemId];
+
+                            const existingItem = state.player.inventory.find(i => i.itemId === foundItemId);
+                            if (existingItem) {
+                                existingItem.quantity += 1;
+                            } else {
+                                state.player.inventory.push({ itemId: foundItemId, quantity: 1 });
+                            }
+
+                            state.eventLog.push({ 
+                                id: `scavenge-${Date.now()}`, 
+                                message: `Saat berjalan, kamu menemukan: ${itemData.name}.`, 
+                                type: 'info' 
+                            });
+                        }
                     }
                 } else {
                     state.error = `Pilihan salah: Tidak dapat menemukan node tujuan '${choice.targetNodeId}'.`;

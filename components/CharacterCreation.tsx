@@ -182,7 +182,8 @@ const CharacterCreation: React.FC = () => {
                                 {Object.entries(displayAttributes).map(([key, value]) => (
                                     <li key={key}>
                                         <span>{key}</span>
-                                        <span className={`attr-value ${getAttributeValueClass(value)}`}>{value}</span>
+                                        {/* FIX: The value from Object.entries is inferred as 'unknown', which is not assignable to 'number'. Cast 'value' to 'number' to fix the TypeScript error. */}
+                                        <span className={`attr-value ${getAttributeValueClass(value as number)}`}>{value as number}</span>
                                     </li>
                                 ))}
                             </ul>

@@ -44,6 +44,14 @@ export const codex: Codex = {
         effects: [{ type: 'SKILL_BONUS', key: 'flat_damage_bonus', value: 8 }],
         value: 80
     },
+    'palu_godam': {
+        name: 'Palu Godam',
+        description: 'Palu berat yang digunakan untuk merobohkan struktur. Sangat efektif untuk meremukkan tengkorak.',
+        type: 'weapon',
+        equipmentSlot: 'meleeWeapon',
+        effects: [{ type: 'SKILL_BONUS', key: 'flat_damage_bonus', value: 10 }],
+        value: 120
+    },
 
     // ARMOR
     'jaket_kulit_usang': {
@@ -70,6 +78,14 @@ export const codex: Codex = {
       effects: [{ type: 'SKILL_BONUS', key: 'damage_resistance', value: 6 }],
       value: 180,
     },
+    'pelindung_bahu_rakitan': {
+      name: 'Pelindung Bahu Rakitan',
+      description: 'Dibuat dari rambu lalu lintas dan sabuk pengaman. Memberikan perlindungan yang lumayan.',
+      type: 'armor',
+      equipmentSlot: 'armor',
+      effects: [{ type: 'SKILL_BONUS', key: 'damage_resistance', value: 5 }],
+      value: 150,
+    },
 
     // KONSUMSI
     'perban': { name: 'Perban', description: 'Kain kasa steril untuk membalut luka. Memulihkan sedikit HP.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 25 }], value: 20 },
@@ -78,6 +94,13 @@ export const codex: Codex = {
     'makanan_kaleng': { name: 'Makanan Kaleng', description: 'Sarden atau kornet dari dunia lama. Memulihkan HP dalam jumlah sedang.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 40 }], value: 50 },
     'kopi_instan': { name: 'Kopi Instan', description: 'Secangkir semangat di dunia yang lelah. Menghilangkan rasa kantuk untuk sementara.', type: 'consumable', effects: [], value: 15 }, // Efek mungkin ditambahkan di masa depan
     'stimulan': { name: 'Stimulan Kimia', description: 'Suntikan peningkat adrenalin. Memulihkan banyak HP, tapi mungkin ada efek samping.', type: 'consumable', effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 75 }], value: 120 },
+    'minuman_energi_rakitan': { 
+        name: 'Minuman Energi Rakitan', 
+        description: 'Cairan berdenyut aneh yang berbau ozon dan kafein. Memulihkan sedikit HP.', 
+        type: 'consumable', 
+        effects: [{ type: 'SKILL_BONUS', key: 'healing_effectiveness', value: 30 }], 
+        value: 45 
+    },
 
 
     // MATERIAL KERAJINAN
@@ -87,6 +110,7 @@ export const codex: Codex = {
     'sekrup_baut': { name: 'Sekrup & Baut', description: 'Kumpulan pengencang logam dari berbagai ukuran.', type: 'material', value: 8 },
     'baterai_bekas': { name: 'Baterai Bekas', description: 'Masih memiliki sedikit daya. Mungkin bisa menghidupkan sesuatu.', type: 'material', value: 20 },
     'plastik_bekas': { name: 'Plastik Bekas', description: 'Potongan-potongan plastik dari botol atau wadah. Bisa dilebur dan dibentuk ulang.', type: 'material', value: 5 },
+    'kabel_tembaga': { name: 'Kabel Tembaga', description: 'Gulungan kabel tembaga yang dipreteli dari dinding. Sangat berguna untuk elektronik.', type: 'material', value: 18 },
 
 
     // MISC & QUEST
@@ -272,6 +296,34 @@ export const codex: Codex = {
       ],
       skripDrop: [20, 45],
     },
+    'perampok_nekat': {
+      name: 'Perampok Nekat',
+      description: 'Lebih berpengalaman dan lebih putus asa dari perampok biasa. Mereka tidak akan ragu untuk bertarung sampai mati.',
+      hp: 75,
+      attack: 18,
+      defense: 10,
+      xpValue: 55,
+      lootTable: [
+          { itemId: 'kunci_inggris', chance: 0.4, quantity: [1, 1] },
+          { itemId: 'stimulan', chance: 0.2, quantity: [1, 1] },
+          { itemId: 'jaket_kulit_usang', chance: 0.2, quantity: [1, 1] },
+      ],
+      skripDrop: [30, 60],
+    },
+    'letnan_geng_bangsat': {
+      name: 'Letnan Geng Bangsat',
+      description: 'Seorang anggota Geng Bangsat yang telah membuktikan dirinya. Kejam, licik, dan lebih tangguh.',
+      hp: 100,
+      attack: 22,
+      defense: 12,
+      xpValue: 80,
+      lootTable: [
+          { itemId: 'golok', chance: 0.5, quantity: [1, 1] },
+          { itemId: 'rompi_improvisasi', chance: 0.3, quantity: [1, 1] },
+          { itemId: 'stimulan', chance: 0.5, quantity: [1, 1] },
+      ],
+      skripDrop: [50, 100],
+    },
     'anomali_tengkorak': {
         name: 'Anomali Tengkorak',
         description: 'Makhluk aneh yang tampak seperti tengkorak melayang dengan energi aneh. Gerakannya tidak menentu.',
@@ -325,6 +377,24 @@ export const codex: Codex = {
             { itemId: 'plastik_bekas', quantity: 5 },
             { itemId: 'selotip', quantity: 2 },
             { itemId: 'kain_bekas', quantity: 3 },
+        ],
+    },
+    'pelindung_bahu_rakitan_recipe': {
+        name: 'Pelindung Bahu Rakitan',
+        result: { itemId: 'pelindung_bahu_rakitan', quantity: 1 },
+        ingredients: [
+            { itemId: 'plastik_bekas', quantity: 4 },
+            { itemId: 'sekrup_baut', quantity: 6 },
+            { itemId: 'kabel_tembaga', quantity: 2 },
+        ],
+    },
+    'minuman_energi_rakitan_recipe': {
+        name: 'Minuman Energi Rakitan',
+        result: { itemId: 'minuman_energi_rakitan', quantity: 1 },
+        ingredients: [
+            { itemId: 'air_kemasan', quantity: 1 },
+            { itemId: 'kopi_instan', quantity: 1 },
+            { itemId: 'baterai_bekas', quantity: 1 },
         ],
     },
   },

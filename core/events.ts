@@ -4,7 +4,18 @@ import { codex } from './codex';
 
 // Helper untuk membuat event perdagangan yang dinamis
 const createDynamicTradeEvent = (): RandomEvent => {
-    const tradeableItems: ItemId[] = ['air_kemasan', 'makanan_kaleng', 'perban', 'komponen_elektronik', 'selotip', 'bat_baseball', 'pisau_dapur'];
+    const tradeableItems: ItemId[] = [
+        'air_kemasan', 
+        'makanan_kaleng', 
+        'perban', 
+        'komponen_elektronik', 
+        'selotip', 
+        'bat_baseball', 
+        'pisau_dapur',
+        'palu_godam',
+        'kabel_tembaga',
+        'pelindung_bahu_rakitan',
+    ];
     const selectedItemId = tradeableItems[Math.floor(Math.random() * tradeableItems.length)];
     const item = codex.items[selectedItemId];
     const basePrice = Math.floor(item.value * 1.5); // Harga jual pedagang
@@ -171,6 +182,73 @@ export const randomEvents: RandomEvent[] = [
         ]
     },
     {
+        id: 'pemburu_agraria_minta_makanan',
+        type: 'dialogue',
+        npc: {
+            name: 'Pemburu Agraria',
+            portraitKey: 'faksi_pemburu_agraria_01.png',
+            faction: 'pemburu_agraria',
+        },
+        narrative: 'Seorang pemburu dengan kulit terbakar matahari menghentikanmu. "Aku sudah berhari-hari melacak mangsa tanpa hasil," katanya dengan suara serak. "Punya makanan lebih? Aku bisa menukarnya dengan beberapa bahan yang berguna."',
+        choices: [
+            {
+                text: '[Beri Makanan Kaleng] Ini, ambillah.',
+                condition: [{ type: 'HAS_ITEM', key: 'makanan_kaleng', value: 1 }],
+                effects: [
+                    { type: 'LOSE_ITEM', key: 'makanan_kaleng', value: 1, message: 'Kamu memberikan 1 Makanan Kaleng.' },
+                    { type: 'GAIN_ITEM', key: 'kain_bekas', value: 3, message: 'Dia mengangguk berterima kasih dan memberimu beberapa kain.' },
+                    { type: 'CHANGE_REPUTATION', key: 'pemburu_agraria', value: 5, message: 'Reputasimu dengan Pemburu Agraria meningkat.' }
+                ]
+            },
+            {
+                text: 'Aku harus menyimpan makananku sendiri.',
+                effects: [
+                    { type: 'CHANGE_REPUTATION', key: 'pemburu_agraria', value: -3, message: 'Pemburu itu mendengus dan berbalik pergi dengan kecewa.' },
+                    { type: 'NOTHING', message: 'Kamu menyimpan persediaanmu untuk dirimu sendiri.' }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'dilema_medis_pemukiman',
+        type: 'dialogue',
+        triggerCondition: (state: GameState) => state.player.inventory.some(item => item.itemId === 'stimulan'),
+        npc: {
+            name: 'Pemimpin Pemukiman',
+            portraitKey: 'npc_warga_07.png',
+            faction: 'sisa_kemanusiaan',
+        },
+        narrative: 'Pemimpin sebuah pemukiman kecil memanggilmu ke tenda medis. Wajahnya cemas. "Penyintas, kami dalam masalah besar. Wabah menyebar dan kami kehabisan stimulan. Kudengar kau punya satu. Demi kemanusiaan, maukah kau membantu kami?"',
+        choices: [
+            {
+                text: 'Tentu saja. Ambil ini, tanpa bayaran.',
+                condition: [{ type: 'HAS_ITEM', key: 'stimulan', value: 1 }],
+                effects: [
+                    { type: 'LOSE_ITEM', key: 'stimulan', value: 1, message: 'Kamu memberikan Stimulan. Wajah pemimpin itu dipenuhi rasa terima kasih.' },
+                    { type: 'CHANGE_REPUTATION', key: 'sisa_kemanusiaan', value: 15, message: 'Tindakanmu tidak akan dilupakan. Reputasi dengan Sisa Kemanusiaan meningkat pesat.' },
+                    { type: 'GAIN_XP', value: 50, message: 'Kamu mendapatkan 50 XP karena membantu sesama.'}
+                ]
+            },
+            {
+                text: '[Jual] Bantuan tidak gratis. 200 Skrip.',
+                condition: [
+                    { type: 'HAS_ITEM', key: 'stimulan', value: 1 }
+                ],
+                effects: [
+                    { type: 'LOSE_ITEM', key: 'stimulan', value: 1, message: 'Kamu menjual Stimulan itu.' },
+                    { type: 'CHANGE_SKRIP', value: 200, message: 'Dengan berat hati, dia membayarmu 200 Skrip.'},
+                    { type: 'CHANGE_REPUTATION', key: 'sisa_kemanusiaan', value: -10, message: 'Mereka mendapatkan apa yang mereka butuhkan, tetapi reputasimu tercoreng.' }
+                ]
+            },
+            {
+                text: 'Itu milikku. Aku tidak bisa memberikannya.',
+                effects: [
+                    { type: 'CHANGE_REPUTATION', key: 'sisa_kemanusiaan', value: -15, message: 'Dia menatapmu dengan tidak percaya. "Kau akan membiarkan kami mati?" Reputasimu dengan Sisa Kemanusiaan anjlok.' }
+                ]
+            }
+        ]
+    },
+    {
         id: 'sekte_pustaka_trade',
         type: 'dialogue',
         npc: {
@@ -216,6 +294,35 @@ export const randomEvents: RandomEvent[] = [
             {
                 text: 'Lawan!',
                 effects: [{ type: 'START_COMBAT', key: 'anomali_tengkorak', message: 'Anomali Tengkorak menyerang!' }]
+            }
+        ]
+    },
+    {
+        id: 'sergapan_perampok_nekat',
+        type: 'threat',
+        npc: { name: 'Sistem', portraitKey: '' },
+        narrative: 'Bayangan bergerak cepat di gang sempit. Sebelum kau sempat bereaksi, seorang perampok dengan tatapan mata liar melompat keluar, senjatanya teracung. "Jangan bergerak! Serahkan semuanya!"',
+        choices: [
+            {
+                text: 'Lawan!',
+                effects: [{ type: 'START_COMBAT', key: 'perampok_nekat', message: 'Perampok Nekat menyerang!' }]
+            }
+        ]
+    },
+     {
+        id: 'patroli_geng_bangsat',
+        type: 'threat',
+        npc: { name: 'Letnan Geng Bangsat', portraitKey: 'faksi_geng_bangsat_leader.png', faction: 'geng_bangsat' },
+        narrative: 'Kamu berpapasan dengan patroli Geng Bangsat yang dipimpin oleh seseorang yang tampak lebih besar dan lebih kejam dari yang lain. "Kau tersesat, anak manis?" dia menyeringai. "Ini wilayah kami. Kau harus membayar pajak."',
+        choices: [
+            {
+                text: '[Lawan] Aku tidak membayar siapapun.',
+                effects: [{ type: 'START_COMBAT', key: 'letnan_geng_bangsat', message: 'Letnan Geng Bangsat tertawa. "Jawaban yang salah!"' }]
+            },
+            {
+                 text: '[Ketangkasan 8+] Coba menyelinap pergi.',
+                 condition: [{ type: 'ATTRIBUTE', key: 'ketangkasan', value: 8 }],
+                 effects: [{ type: 'NOTHING', message: 'Kamu berhasil menyelinap ke dalam bayangan tanpa terdeteksi.'}]
             }
         ]
     },
