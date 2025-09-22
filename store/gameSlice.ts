@@ -224,14 +224,14 @@ const gameSlice = createSlice({
                     starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'kain_bekas', quantity: 5 }, { itemId: 'komponen_elektronik', quantity: 3 }, { itemId: 'selotip', quantity: 1 });
                     break;
                 case 'mantan_tentara':
-                    starterInventory.push({ itemId: 'golok', quantity: 1 }, { itemId: 'jaket_kulit_usang', quantity: 1 }, { itemId: 'perban', quantity: 3 }, { itemId: 'makanan_kaleng', quantity: 1 });
+                    starterInventory.push({ itemId: 'golok', quantity: 1 }, { itemId: 'rompi_improvisasi', quantity: 1 }, { itemId: 'perban', quantity: 3 }, { itemId: 'stimulan', quantity: 1 });
                     break;
                 case 'teknisi_jalanan':
-                    starterInventory.push({ itemId: 'kunci_inggris', quantity: 1 }, { itemId: 'komponen_elektronik', quantity: 5 }, { itemId: 'selotip', quantity: 2 }, { itemId: 'baterai_bekas', quantity: 2 });
+                    starterInventory.push({ itemId: 'kunci_inggris', quantity: 1 }, { itemId: 'komponen_elektronik', quantity: 5 }, { itemId: 'selotip', quantity: 2 }, { itemId: 'baterai_bekas', quantity: 3 });
                     break;
                 case 'negosiator_pasar_gelap':
                     starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'air_kemasan', quantity: 2 }, { itemId: 'kopi_instan', quantity: 3 });
-                    state.player.skrip += 75;
+                    state.player.skrip += 100;
                     break;
                 case 'kurir_cepat':
                     starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'air_kemasan', quantity: 3 }, { itemId: 'keripik_basi', quantity: 2 }, { itemId: 'kopi_instan', quantity: 2 });
@@ -240,7 +240,7 @@ const gameSlice = createSlice({
                     starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'data_chip', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'kopi_instan', quantity: 2 });
                     break;
                 case 'seniman_grafiti':
-                    starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'keripik_basi', quantity: 3 }, { itemId: 'kain_bekas', quantity: 2 }, { itemId: 'air_kemasan', quantity: 1 });
+                    starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'keripik_basi', quantity: 3 }, { itemId: 'selotip', quantity: 2 }, { itemId: 'air_kemasan', quantity: 1 });
                     break;
                 case 'pengawal_pribadi':
                     starterInventory.push({ itemId: 'bat_baseball', quantity: 1 }, { itemId: 'jaket_kulit_usang', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'stimulan', quantity: 1 });

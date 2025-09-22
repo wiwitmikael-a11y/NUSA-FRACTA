@@ -49,7 +49,8 @@ const ChoicePanel: React.FC = () => {
         currentNodeId, 
         player, 
         isNarrativeComplete,
-        currentRandomEvent 
+        currentRandomEvent,
+        isInCombat,
     } = useSelector((state: RootState) => state.game);
 
     const currentNode = currentChapter?.nodes.find(node => node.nodeId === currentNodeId);
@@ -76,6 +77,10 @@ const ChoicePanel: React.FC = () => {
         // Pilihan event diselesaikan dengan cepat tanpa layar pemuatan
         dispatch(resolveEventChoice(choice));
     };
+
+    if (isInCombat) {
+        return <div className="panel choice-panel"></div>;
+    }
 
     if (currentRandomEvent) {
         return (

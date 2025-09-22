@@ -247,6 +247,21 @@
             margin-top: 1rem;
             border-top: 1px solid var(--border-color);
             padding-top: 1rem;
+            max-height: calc(3 * 1.6 * 0.9rem); /* 3 lines * 1.6 line-height * 0.9rem font-size */
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-color) var(--panel-bg-color);
+        }
+        .event-log-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .event-log-container::-webkit-scrollbar-track {
+            background: var(--panel-bg-color);
+        }
+        .event-log-container::-webkit-scrollbar-thumb {
+            background-color: var(--accent-color);
+            border-radius: 4px;
+            border: 2px solid var(--panel-bg-color);
         }
         .event-log-message.reward { color: var(--reward-color); }
         .event-log-message.danger { color: var(--danger-color); }
