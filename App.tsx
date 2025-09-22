@@ -16,6 +16,7 @@ import JournalUI from './components/ui/JournalUI';
 import CraftingUI from './components/ui/CraftingUI';
 import ImagePanel from './components/panels/ImagePanel';
 import LoadingOverlay from './components/ui/LoadingOverlay';
+import IntroVideo from './components/IntroVideo';
 
 const App: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -24,6 +25,7 @@ const App: React.FC = () => {
     const [isSheetOpen, setSheetOpen] = useState(false);
     const [isJournalOpen, setJournalOpen] = useState(false);
     const [isCraftingOpen, setCraftingOpen] = useState(false);
+    const [introFinished, setIntroFinished] = useState(false);
     
     useEffect(() => {
         const attemptLoad = async () => {
@@ -34,6 +36,10 @@ const App: React.FC = () => {
         };
         attemptLoad();
     }, [dispatch]);
+
+    if (!introFinished) {
+        return <IntroVideo onFinished={() => setIntroFinished(true)} />;
+    }
 
     if (!gameStarted) {
         return <CharacterCreation />;
