@@ -552,11 +552,17 @@
             justify-content: center;
             align-items: center;
         }
-        .portrait-display img {
+        .portrait-frame {
             width: 100%;
             max-width: 300px;
-            height: auto;
             border: 2px solid var(--accent-color);
+            /* Prevents extra space below the image */
+            line-height: 0;
+        }
+        .portrait-frame img {
+            width: 100%;
+            height: auto;
+            display: block; /* Ensures block-level behavior */
         }
         .stats-display ul {
             display: flex;

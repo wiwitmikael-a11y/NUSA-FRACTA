@@ -198,11 +198,13 @@ const CharacterCreation: React.FC = () => {
                 {background && (
                     <div className="creation-summary-section">
                         <div className="portrait-display">
-                            <img 
-                              src={codex.backgrounds[background].portraitUrl} 
-                              alt="Potret Karakter" 
-                              className="character-aura-glow"
-                            />
+                            <div className="portrait-frame">
+                                <img 
+                                  src={codex.backgrounds[background].portraitUrl} 
+                                  alt="Potret Karakter" 
+                                  className="character-aura-glow"
+                                />
+                            </div>
                         </div>
                         <div className="stats-display">
                             <h4>Atribut Awal</h4>
