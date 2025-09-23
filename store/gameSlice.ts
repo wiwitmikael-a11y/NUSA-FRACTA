@@ -5,19 +5,29 @@ import { generateChapter, generateRandomEvent as generateRandomEventFromGemini }
 import { codex } from '../core/codex';
 import { randomEvents } from '../core/events';
 import { calculatePlayerDamage, calculateEnemyDamage, checkLevelUp, calculatePlayerDefense } from '../core/gameRules';
-import { getFactionImageUrl, getNpcImageUrl } from '../services/assetService';
+import { getFactionImageUrl, getNpcInfo, NpcInfo } from '../services/assetService';
 import { calculateNewPoint } from '../services/mapService';
 import type { RootState } from './store';
 import type { GameState, Chapter, ChapterNodeChoice, Player, Recipe, PlayerAttributes, ItemId, RandomEventChoice, RandomEvent, EquipmentSlot, AttributeId, EnemyId, ChoiceEffect, InventoryItem, CompanionId, FactionId } from '../types';
 import { saveGame } from '../services/storageService';
 
-export const generateRandomEvent = createAsyncThunk<RandomEvent, void, { state: RootState }>(
+interface GeneratedEventPayload {
+    event: RandomEvent;
+    npcInfo: NpcInfo;
+}
+
+export const generateRandomEvent = createAsyncThunk<GeneratedEventPayload, void, { state: RootState }>(
     'game/generateRandomEvent',
     async (_, { getState, rejectWithValue }) => {
+        const npcInfo = getNpcInfo();
+        if (!npcInfo) {
+            return rejectWithValue("Gagal mendapatkan informasi NPC untuk event.");
+        }
+
         try {
             const currentState = getState().game;
-            const event = await generateRandomEventFromGemini(currentState);
-            return event;
+            const event = await generateRandomEventFromGemini(currentState, npcInfo);
+            return { event, npcInfo };
         } catch (error: any) {
             return rejectWithValue(error.message);
         }
@@ -219,17 +229,9 @@ const gameSlice = createSlice({
             state.currentRandomEvent = event;
 
             if (event.npc.name !== 'Sistem') {
-                let portraitUrl: string | null = null;
-                if (event.npc.faction) {
-                    portraitUrl = getFactionImageUrl(event.npc.faction as any);
-                } else {
-                    portraitUrl = getNpcImageUrl();
-                }
-                
+                const portraitUrl = event.npc.faction ? getFactionImageUrl(event.npc.faction) : getNpcInfo()?.portraitUrl;
                 if (portraitUrl) {
-                    state.activeNpc = { name: event.npc.name, portraitUrl };
-                } else {
-                     state.activeNpc = { name: event.npc.name, portraitUrl: '' }; // fallback
+                     state.activeNpc = { name: event.npc.name, portraitUrl };
                 }
             } else {
                 state.activeNpc = null;
@@ -636,14 +638,11 @@ const gameSlice = createSlice({
             .addCase(generateRandomEvent.pending, (state) => {
                 // Optional: add a subtle loading indicator for the event itself
             })
-            .addCase(generateRandomEvent.fulfilled, (state, action: PayloadAction<RandomEvent>) => {
-                const event = action.payload;
+            .addCase(generateRandomEvent.fulfilled, (state, action: PayloadAction<GeneratedEventPayload>) => {
+                const { event, npcInfo } = action.payload;
                 state.currentRandomEvent = event;
                 if (event.npc.name !== 'Sistem') {
-                    const portraitUrl = event.npc.faction ? getFactionImageUrl(event.npc.faction) : getNpcImageUrl();
-                    if (portraitUrl) {
-                        state.activeNpc = { name: event.npc.name, portraitUrl };
-                    }
+                    state.activeNpc = { name: event.npc.name, portraitUrl: npcInfo.portraitUrl };
                 }
                 state.isNarrativeComplete = false;
             })

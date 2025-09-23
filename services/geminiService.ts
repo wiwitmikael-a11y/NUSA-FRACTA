@@ -2,6 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { GameState, Chapter, RandomEvent } from '../types';
 import { codex } from '../core/codex';
+import { NpcInfo } from "./assetService";
 
 // FIX: Initialize GoogleGenAI with a named apiKey object.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -195,10 +196,15 @@ export const generateChapter = async (gameState: GameState, chapterDetails: { ti
     }
 };
 
-export const generateRandomEvent = async (gameState: GameState): Promise<RandomEvent> => {
+export const generateRandomEvent = async (gameState: GameState, npcInfo: NpcInfo): Promise<RandomEvent> => {
     const { player, currentLocation, currentTimeOfDay } = gameState;
     const inventoryList = player.inventory.map(i => `${i.itemId} (x${i.quantity})`).join(', ') || 'kosong';
     const backgroundNames = Object.values(codex.backgrounds).map(b => b.name).join(', ');
+
+    let genderInstruction = '';
+    if (npcInfo.inferredGender !== 'netral') {
+        genderInstruction = `PENTING: Potret untuk NPC ini sudah ditentukan dan menampilkan seorang **${npcInfo.inferredGender}**. Buatlah nama dan dialog yang konsisten dengan informasi ini.`
+    }
 
     const prompt = `
         Anda adalah Game Master untuk RPG teks NUSA FRACTA. Buat satu event acak yang singkat dan mandiri dalam format JSON.
@@ -209,6 +215,9 @@ export const generateRandomEvent = async (gameState: GameState): Promise<RandomE
         - Waktu: ${currentTimeOfDay}
         - HP: ${player.hp}/${player.maxHp}
         - Inventaris: ${inventoryList}
+
+        Instruksi NPC:
+        ${genderInstruction}
 
         Aturan:
         1. HARUS valid JSON sesuai skema.
@@ -236,7 +245,7 @@ export const generateRandomEvent = async (gameState: GameState): Promise<RandomE
                             type: Type.OBJECT,
                             properties: {
                                 name: { type: Type.STRING },
-                                portraitKey: { type: Type.STRING },
+                                portraitKey: { type: Type.STRING }, // This will be ignored, but schema requires it
                                 faction: { type: Type.STRING, nullable: true },
                             },
                             required: ['name', 'portraitKey']

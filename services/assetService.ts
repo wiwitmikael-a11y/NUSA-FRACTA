@@ -200,17 +200,52 @@ export const getImageUrlForLocation = (location: string): string | null => {
     return null; 
 };
 
-export const getNpcImageUrl = (): string | null => {
+// --- START: New Gender-Aware NPC Logic ---
+export type InferredGender = 'pria' | 'wanita' | 'netral';
+export interface NpcInfo {
+    portraitUrl: string;
+    inferredGender: InferredGender;
+}
+const femaleNameHints = ['ayra', 'davina', 'gadis', 'wanita', 'citra', 'gita', 'rin'];
+const maleNameHints = ['raizen', 'pria', 'bapak', 'bayu', 'dharma', 'elang', 'harun', 'jaka'];
+
+const inferGenderFromFilename = (filename: string): InferredGender => {
+    const lowerFilename = filename.toLowerCase();
+    if (femaleNameHints.some(hint => lowerFilename.includes(hint))) {
+        return 'wanita';
+    }
+    if (maleNameHints.some(hint => lowerFilename.includes(hint))) {
+        return 'pria';
+    }
+    return 'netral';
+};
+
+/**
+ * Gets a random NPC portrait and infers its gender from the filename.
+ * This allows for more consistent dynamic event generation.
+ * @returns An NpcInfo object with the URL and inferred gender, or null if no image is found.
+ */
+export const getNpcInfo = (): NpcInfo | null => {
     const allNpcImages = [
         ...assetManifest.npcPortraits.generic,
         ...assetManifest.npcPortraits.playerArchetypes,
     ];
     const imageName = getRandomImage(allNpcImages);
     if (imageName) {
-        return `${PORTRAIT_BASE_URL}/${imageName}`;
+        return {
+            portraitUrl: `${PORTRAIT_BASE_URL}/${imageName}`,
+            inferredGender: inferGenderFromFilename(imageName)
+        };
     }
     console.warn(`Could not find a generic NPC image.`);
     return null;
+}
+// --- END: New Gender-Aware NPC Logic ---
+
+
+export const getNpcImageUrl = (): string | null => {
+    const info = getNpcInfo();
+    return info ? info.portraitUrl : null;
 };
 
 export const getFactionImageUrl = (factionId: FactionId): string | null => {

@@ -111,21 +111,21 @@
         .command-menu-button {
             font-family: var(--font-heading);
             padding: 0.5rem 1rem;
-            border-color: var(--terminal-border-color);
-            color: var(--terminal-text-color);
-            text-shadow: 0 0 5px var(--terminal-text-color);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            text-shadow: 0 0 5px var(--accent-color);
         }
         .command-menu-button:hover {
-            background-color: var(--terminal-text-color);
-            color: var(--terminal-bg-color);
+            background-color: var(--accent-color);
+            color: var(--background-color);
             text-shadow: none;
         }
         .command-menu-dropdown {
             position: absolute;
             top: 110%;
             right: 0;
-            background-color: var(--terminal-bg-color);
-            border: 1px solid var(--terminal-border-color);
+            background-color: var(--panel-bg-color);
+            border: 1px solid var(--accent-color);
             border-radius: 4px;
             z-index: 1100;
             overflow: hidden;
@@ -137,7 +137,7 @@
             transition: opacity 0.2s ease-out, transform 0.2s ease-out;
             pointer-events: none;
             backdrop-filter: blur(5px);
-            background-color: rgba(13, 31, 19, 0.9);
+            background-color: rgba(30, 30, 30, 0.9);
         }
         .command-menu-dropdown.open {
             opacity: 1;
@@ -148,8 +148,8 @@
             width: 100%;
             text-align: left;
             border: none;
-            border-bottom: 1px dashed var(--terminal-border-color);
-            color: var(--terminal-text-color);
+            border-bottom: 1px dashed var(--border-color);
+            color: var(--text-color);
             padding: 0.75rem 1.5rem;
             font-weight: normal;
             font-family: var(--font-heading);
@@ -158,8 +158,8 @@
             border-bottom: none;
         }
         .command-menu-dropdown button:hover {
-            background-color: var(--terminal-text-color);
-            color: var(--terminal-bg-color);
+            background-color: var(--accent-color);
+            color: var(--background-color);
         }
 
         .game-world {
