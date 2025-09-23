@@ -6,6 +6,7 @@ import { codex } from '../core/codex';
 import { randomEvents } from '../core/events';
 import { calculatePlayerDamage, calculateEnemyDamage, checkLevelUp, calculatePlayerDefense } from '../core/gameRules';
 import { getFactionImageUrl, getNpcImageUrl } from '../services/assetService';
+import { calculateNewPoint } from '../services/mapService';
 import type { RootState } from './store';
 import type { GameState, Chapter, ChapterNodeChoice, Player, Recipe, PlayerAttributes, ItemId, RandomEventChoice, RandomEvent, EquipmentSlot, AttributeId, EnemyId, ChoiceEffect, InventoryItem, CompanionId, FactionId } from '../types';
 import { saveGame } from '../services/storageService';
@@ -547,6 +548,10 @@ const gameSlice = createSlice({
                     
                      const nextNode = state.currentChapter?.nodes.find(node => node.nodeId === choice.targetNodeId);
                      if (nextNode) {
+                        if (nextNode.location !== state.currentLocation && state.currentChapter && state.currentChapter.nodes) {
+                            const newCoords = calculateNewPoint(state.currentChapterPath, nextNode.location, state.currentChapter.nodes.length);
+                            state.currentChapterPath.push({ location: nextNode.location, ...newCoords });
+                        }
                         state.currentNodeId = nextNode.nodeId;
                         state.currentLocation = nextNode.location;
                         state.currentTimeOfDay = nextNode.timeOfDay || state.currentTimeOfDay;
@@ -567,6 +572,10 @@ const gameSlice = createSlice({
                 if (choice.effects) applyEffects(state, choice.effects);
                 const nextNode = state.currentChapter?.nodes.find(node => node.nodeId === choice.targetNodeId);
                 if (nextNode) {
+                    if (nextNode.location !== state.currentLocation && state.currentChapter && state.currentChapter.nodes) {
+                        const newCoords = calculateNewPoint(state.currentChapterPath, nextNode.location, state.currentChapter.nodes.length);
+                        state.currentChapterPath.push({ location: nextNode.location, ...newCoords });
+                    }
                     state.currentNodeId = nextNode.nodeId;
                     state.currentLocation = nextNode.location;
                     state.currentTimeOfDay = nextNode.timeOfDay || state.currentTimeOfDay;
@@ -606,6 +615,13 @@ const gameSlice = createSlice({
                     if (!state.player.visitedLocations.includes(startNode.location)) {
                         state.player.visitedLocations.push(startNode.location);
                     }
+                    // Initialize map path for the new chapter
+                    const startPoint = { 
+                        location: startNode.location, 
+                        x: 50 + (Math.random() - 0.5) * 10, // Start near the center
+                        y: 50 + (Math.random() - 0.5) * 10 
+                    };
+                    state.currentChapterPath = [startPoint];
                 }
                 state.isLoading = false;
                 saveGame('player1', state);

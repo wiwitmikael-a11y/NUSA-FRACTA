@@ -132,6 +132,8 @@ export interface GameState {
   eventLog: EventLogMessage[];
   isChapterEndModalOpen: boolean;
   isNarrativeComplete: boolean;
+  // Map State
+  currentChapterPath: { location: string; x: number; y: number; }[];
   // Combat State
   isInCombat: boolean;
   currentEnemyId: EnemyId | null;

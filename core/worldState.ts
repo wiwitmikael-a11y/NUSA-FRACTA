@@ -45,6 +45,7 @@ export const initialGameState: GameState = {
   eventLog: [],
   isChapterEndModalOpen: false,
   isNarrativeComplete: false,
+  currentChapterPath: [],
   // Combat State
   isInCombat: false,
   currentEnemyId: null,
