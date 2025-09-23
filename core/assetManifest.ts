@@ -104,6 +104,7 @@ export const assetManifest = {
       'npc_warga_04.png',
       'npc_warga_06.png',
       'npc_warga_07.png',
+      'penyintas_biasa.png',
     ],
     companions: [
         'companion_ayra.png',
@@ -139,6 +140,9 @@ export const assetManifest = {
         'faksi_saudagar_jalanan_02.png',
         'faksi_saudagar_jalanan_03.png',
         'faksi_saudagar_jalanan_04.png',
+        'penyintas_pedagang_item.png',
+        'penyintas_pedagang_senjata.png',
+        'warga_pedagang_reliks.png',
     ],
     sekte_pustaka: [
         'faksi_sekte_pustaka_leader.png',
@@ -147,6 +151,18 @@ export const assetManifest = {
         'faksi_sekte_pustaka_03.png',
         'faksi_sekte_pustaka_04.png',
         'faksi_sekte_pustaka_05.png',
+    ],
+    sisa_kemanusiaan: [
+        'pemimpin_sisa_kemanusiaan.png',
+        'warga_sisa_kemanusiaan.png',
+    ],
+    gerombolan_besi: [
+        'pemimpin_gerombolan_besi.png',
+        'warga_gerombolan_besi.png',
+    ],
+    teknokrat: [
+        'pemimpin_teknokrats.png',
+        'warga_teknokrats.png',
     ],
   },
   enemyPortraits: {
@@ -168,6 +184,24 @@ export const assetManifest = {
           'musuh_raider_01.png',
           'musuh_raider_02.png',
           'musuh_raider_03.png',
-      ]
+      ],
+      drones: [
+        'musuh_drone_nyamuk.png',
+        'musuh_drone_kecil_semut.png',
+        'musuh_drone_besar_kumbang.png',
+        'musuh_drone_besar_labalaba.png',
+        'musuh_drone_laser_lalat.png',
+        'musuh_drone_laser_serangga.png',
+        'musuh_drone_kecil_labalaba.png',
+      ],
+      mutantDogs: [
+        'musuh_anjing_mutan_reptil.png',
+        'musuh_anjing_mutan_bertanduk.png',
+        'musuh_anjing_mutan_iblis.png',
+        'musuh_anjing_mutan_beracun.png',
+        'musuh_anjing_mutan_berduri.png',
+        'musuh_anjing_mutan_selokan.png',
+        'musuh_anjing_mutan_jalanan.png',
+      ],
   }
 };

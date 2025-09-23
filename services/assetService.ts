@@ -209,10 +209,9 @@ export const getFactionImageUrl = (factionId: FactionId): string | null => {
         'republik_merdeka': 'republik_merdeka',
         'saudagar_jalanan': 'saudagar_jalanan',
         'sekte_pustaka': 'sekte_pustaka',
-        // Tambahkan faksi lain jika ada di masa depan
-        'sisa_kemanusiaan': 'republik_merdeka', // Placeholder
-        'gerombolan_besi': 'geng_bangsat', // Placeholder
-        'teknokrat': 'sekte_pustaka', // Placeholder
+        'sisa_kemanusiaan': 'sisa_kemanusiaan',
+        'gerombolan_besi': 'gerombolan_besi',
+        'teknokrat': 'teknokrat',
     };
 
     const factionKey = keyMap[factionId];
@@ -235,8 +234,12 @@ export const getEnemyImageUrl = (enemyId: EnemyId): string | null => {
 
     if (lowerEnemyId.includes('anomali')) {
         images = assetManifest.enemyPortraits.anomali;
-    } else if (lowerEnemyId.includes('preman') || lowerEnemyId.includes('perampok')) {
+    } else if (lowerEnemyId.includes('preman') || lowerEnemyId.includes('perampok') || lowerEnemyId.includes('geng')) {
         images = assetManifest.enemyPortraits.raider;
+    } else if (lowerEnemyId.includes('anjing')) {
+        images = assetManifest.enemyPortraits.mutantDogs;
+    } else if (lowerEnemyId.includes('drone') || lowerEnemyId.includes('robot')) {
+        images = assetManifest.enemyPortraits.drones;
     } else {
         // Fallback for other types or unmatched IDs
         images = assetManifest.enemyPortraits.raider;
