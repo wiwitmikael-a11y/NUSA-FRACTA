@@ -1,22 +1,41 @@
 // store/gameSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { initialGameState } from '../core/worldState';
-import { generateChapter } from '../services/geminiService';
+import { generateChapter, generateRandomEvent as generateRandomEventFromGemini } from '../services/geminiService';
 import { codex } from '../core/codex';
 import { randomEvents } from '../core/events';
-import { calculatePlayerDamage, calculateEnemyDamage, checkLevelUp, calculatePlayerDefense, calculateXpForNextLevel } from '../core/gameRules';
+import { calculatePlayerDamage, calculateEnemyDamage, checkLevelUp, calculatePlayerDefense } from '../core/gameRules';
 import { getFactionImageUrl, getNpcImageUrl } from '../services/assetService';
 import type { RootState } from './store';
-import type { GameState, Chapter, ChapterNodeChoice, Player, Recipe, PlayerAttributes, ItemId, RandomEventChoice, RandomEvent, FactionId, EquipmentSlot, AttributeId, EnemyId, ChoiceEffect, InventoryItem } from '../types';
+import type { GameState, Chapter, ChapterNodeChoice, Player, Recipe, PlayerAttributes, ItemId, RandomEventChoice, RandomEvent, EquipmentSlot, AttributeId, EnemyId, ChoiceEffect, InventoryItem, CompanionId } from '../types';
 import { saveGame } from '../services/storageService';
 
+export const generateRandomEvent = createAsyncThunk<RandomEvent, void, { state: RootState }>(
+    'game/generateRandomEvent',
+    async (_, { getState, rejectWithValue }) => {
+        try {
+            const currentState = getState().game;
+            const event = await generateRandomEventFromGemini(currentState);
+            return event;
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
 // Helper function to trigger a random event
-const triggerRandomEvent = (state: GameState): void => {
-    // 25% chance to trigger an event
+const triggerRandomEvent = (state: GameState, dispatch: any): void => {
+    // 25% chance to trigger any event
     if (Math.random() > 0.25) {
         state.currentRandomEvent = null;
         state.activeNpc = null;
         return;
+    }
+
+    // Of that 25%, 50% chance to be a dynamic Gemini event
+    if (Math.random() < 0.50) {
+        dispatch(generateRandomEvent());
+        return; // Let the thunk handle setting the event
     }
     
     const possibleEvents = randomEvents.filter(event => 
@@ -30,7 +49,7 @@ const triggerRandomEvent = (state: GameState): void => {
         if (event.npc.name !== 'Sistem') {
              let portraitUrl: string | null = null;
             if (event.npc.faction) {
-                portraitUrl = getFactionImageUrl(event.npc.faction as any); // cast to any to match keys
+                portraitUrl = getFactionImageUrl(event.npc.faction as any);
             } else {
                 portraitUrl = getNpcImageUrl();
             }
@@ -43,13 +62,12 @@ const triggerRandomEvent = (state: GameState): void => {
         } else {
             state.activeNpc = null;
         }
-
        
         state.isNarrativeComplete = false; // Reset for event narrative
     }
 };
 
-const applyEffects = (state: GameState, effects: ChoiceEffect[]) => {
+const applyEffects = (state: GameState, effects: (ChoiceEffect | RandomEventChoice['effects'][0])[]) => {
      effects.forEach(effect => {
         let message = effect.message;
         
@@ -70,7 +88,7 @@ const applyEffects = (state: GameState, effects: ChoiceEffect[]) => {
                     const itemInInv = state.player.inventory.find(i => i.itemId === effect.key);
                     if (itemInInv) {
                         itemInInv.quantity -= effect.value;
-                        if (itemInInv.quantity <= 0) { // Safety check before filtering
+                        if (itemInInv.quantity <= 0) {
                             state.player.inventory = state.player.inventory.filter(i => i.itemId !== effect.key);
                         }
                         state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'info' });
@@ -108,10 +126,35 @@ const applyEffects = (state: GameState, effects: ChoiceEffect[]) => {
                         state.isInCombat = true;
                         state.currentEnemyId = enemyId;
                         state.enemyCurrentHp = enemy.hp;
-                        state.combatLog = [{ id: `clog-${Date.now()}`, message: `${enemy.name} muncul!`, turn: 'system' }];
+                        state.combatLog = [{ id: `clog-${Date.now()}`, message: `${enemy.name} muncul!`, source: 'system' }];
                         state.eventLog.push({ id: `elog-${Date.now()}`, message: effect.message, type: 'danger' });
                     }
                 }
+                break;
+            case 'RECRUIT_COMPANION':
+                if (effect.key) {
+                    const companionId = effect.key as CompanionId;
+                    if (!state.player.companions.includes(companionId)) {
+                        state.player.companions.push(companionId);
+                        state.player.activeCompanion = companionId; // Automatically activate
+                        state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'reward' });
+                    }
+                }
+                break;
+            case 'CHANGE_SKRIP':
+                if (typeof effect.value === 'number') {
+                    state.player.skrip += effect.value;
+                    state.eventLog.push({ id: `elog-${Date.now()}`, message, type: effect.value > 0 ? 'reward' : 'info' });
+                }
+                break;
+            case 'CHANGE_REPUTATION':
+                if (effect.key && typeof effect.value === 'number') {
+                    state.player.reputation[effect.key as any] += effect.value;
+                    state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'info' });
+                }
+                break;
+             case 'NOTHING':
+                state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'info' });
                 break;
         }
     });
@@ -144,7 +187,6 @@ export const startNextChapter = createAsyncThunk<void, void, { state: RootState 
     async (_, { getState, dispatch }) => {
         const state = getState().game;
 
-        // Create a summary of player state for the next chapter objective
         const objectiveContext = `Setelah menyelesaikan bab "${state.currentChapter?.title}", ${state.player.name} (Level ${state.player.level}) kini berada di ${state.currentLocation}.`;
         
         const randomNextChapter = nextChapterPool[Math.floor(Math.random() * nextChapterPool.length)];
@@ -158,11 +200,10 @@ export const startNextChapter = createAsyncThunk<void, void, { state: RootState 
     }
 );
 
-// Helper function for defeat
 const handleDefeat = (state: GameState) => {
     const skripLost = Math.floor(state.player.skrip * 0.20);
     state.player.skrip = Math.max(0, state.player.skrip - skripLost);
-    state.player.hp = 1; // Bangkit dengan 1 HP
+    state.player.hp = 1;
 
     state.eventLog.push({ 
         id: `defeat-${Date.now()}`, 
@@ -177,8 +218,8 @@ const handleDefeat = (state: GameState) => {
         state.currentRandomEvent = null;
         state.activeNpc = null;
     }
-    state.isNarrativeComplete = true; // Kembali ke narasi
-    state.error = null; // Hapus error state
+    state.isNarrativeComplete = true;
+    state.error = null;
 };
 
 
@@ -194,11 +235,14 @@ const gameSlice = createSlice({
         },
         startGame: (state) => {
             state.gameStarted = true;
+            if (!state.player.visitedLocations.includes(state.currentLocation)) {
+                state.player.visitedLocations.push(state.currentLocation);
+            }
         },
         loadGame: (state, action: PayloadAction<GameState>) => {
             return {
                 ...action.payload,
-                isLoading: false, // Ensure loading is false when loading a save
+                isLoading: false,
             };
         },
         setPlayerCharacter: (state, action: PayloadAction<{ name: string; backgroundId: string; skillId: string; attributes: PlayerAttributes }>) => {
@@ -211,484 +255,48 @@ const gameSlice = createSlice({
                 name,
                 backgroundId,
                 skillId,
-                attributes: attributes, // Assign pre-calculated attributes directly
+                attributes: attributes,
                 portraitUrl: background?.portraitUrl || null,
             };
 
-            // Berikan starter pack berdasarkan Latar Belakang (DITINGKATKAN)
             const starterInventory: InventoryItem[] = [];
-            state.player.skrip = 75; // Skrip dasar ditingkatkan
+            state.player.skrip = 75;
 
             switch (backgroundId) {
-                case 'pemulung':
-                    starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'kain_bekas', quantity: 5 }, { itemId: 'komponen_elektronik', quantity: 3 }, { itemId: 'selotip', quantity: 1 });
-                    break;
-                case 'mantan_tentara':
-                    starterInventory.push({ itemId: 'golok', quantity: 1 }, { itemId: 'rompi_improvisasi', quantity: 1 }, { itemId: 'perban', quantity: 3 }, { itemId: 'stimulan', quantity: 1 });
-                    break;
-                case 'teknisi_jalanan':
-                    starterInventory.push({ itemId: 'kunci_inggris', quantity: 1 }, { itemId: 'komponen_elektronik', quantity: 5 }, { itemId: 'selotip', quantity: 2 }, { itemId: 'baterai_bekas', quantity: 3 });
-                    break;
-                case 'negosiator_pasar_gelap':
-                    starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'air_kemasan', quantity: 2 }, { itemId: 'kopi_instan', quantity: 3 });
-                    state.player.skrip += 100;
-                    break;
-                case 'kurir_cepat':
-                    starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'air_kemasan', quantity: 3 }, { itemId: 'keripik_basi', quantity: 2 }, { itemId: 'kopi_instan', quantity: 2 });
-                    break;
-                 case 'pustakawan_kiamat':
-                    starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'data_chip', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'kopi_instan', quantity: 2 });
-                    break;
-                case 'seniman_grafiti':
-                    starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'keripik_basi', quantity: 3 }, { itemId: 'selotip', quantity: 2 }, { itemId: 'air_kemasan', quantity: 1 });
-                    break;
-                case 'pengawal_pribadi':
-                    starterInventory.push({ itemId: 'bat_baseball', quantity: 1 }, { itemId: 'jaket_kulit_usang', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'stimulan', quantity: 1 });
-                    break;
-                case 'petani_hidroponik':
-                    starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'air_kemasan', quantity: 3 }, { itemId: 'makanan_kaleng', quantity: 2 }, { itemId: 'perban', quantity: 1 });
-                    break;
-                case 'kultis_puing':
-                    starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'artefak_aneh', quantity: 1 }, { itemId: 'keripik_basi', quantity: 2 }, { itemId: 'kain_bekas', quantity: 2 });
-                    break;
-                default:
-                    starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'keripik_basi', quantity: 1 });
-                    break;
+                case 'pemulung': starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'kain_bekas', quantity: 5 }, { itemId: 'komponen_elektronik', quantity: 3 }, { itemId: 'selotip', quantity: 1 }); break;
+                case 'mantan_tentara': starterInventory.push({ itemId: 'golok', quantity: 1 }, { itemId: 'rompi_improvisasi', quantity: 1 }, { itemId: 'perban', quantity: 3 }, { itemId: 'stimulan', quantity: 1 }); break;
+                case 'teknisi_jalanan': starterInventory.push({ itemId: 'kunci_inggris', quantity: 1 }, { itemId: 'komponen_elektronik', quantity: 5 }, { itemId: 'selotip', quantity: 2 }, { itemId: 'baterai_bekas', quantity: 3 }); break;
+                case 'negosiator_pasar_gelap': starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'air_kemasan', quantity: 2 }, { itemId: 'kopi_instan', quantity: 3 }); state.player.skrip += 100; break;
+                case 'kurir_cepat': starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'air_kemasan', quantity: 3 }, { itemId: 'keripik_basi', quantity: 2 }, { itemId: 'kopi_instan', quantity: 2 }); break;
+                case 'pustakawan_kiamat': starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'data_chip', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'kopi_instan', quantity: 2 }); break;
+                case 'seniman_grafiti': starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'keripik_basi', quantity: 3 }, { itemId: 'selotip', quantity: 2 }, { itemId: 'air_kemasan', quantity: 1 }); break;
+                case 'pengawal_pribadi': starterInventory.push({ itemId: 'bat_baseball', quantity: 1 }, { itemId: 'jaket_kulit_usang', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'stimulan', quantity: 1 }); break;
+                case 'petani_hidroponik': starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'air_kemasan', quantity: 3 }, { itemId: 'makanan_kaleng', quantity: 2 }, { itemId: 'perban', quantity: 1 }); break;
+                case 'kultis_puing': starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'artefak_aneh', quantity: 1 }, { itemId: 'keripik_basi', quantity: 2 }, { itemId: 'kain_bekas', quantity: 2 }); break;
+                default: starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'keripik_basi', quantity: 1 }); break;
             }
             state.player.inventory = starterInventory;
 
-
-            // Terapkan bonus HP dasar dari keahlian (sebagai persentase)
             if (skill) {
                 const hpBonusEffect = skill.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'base_hp_bonus');
                 if (hpBonusEffect) {
                     const baseHp = initialGameState.player.maxHp;
                     state.player.maxHp = Math.round(baseHp * (1 + hpBonusEffect.value / 100));
-                    state.player.hp = state.player.maxHp; // Mulai dengan HP penuh
+                    state.player.hp = state.player.maxHp;
                 }
-            }
-        },
-        makeChoice: (state, action: PayloadAction<ChapterNodeChoice>) => {
-            state.currentRandomEvent = null;
-            state.activeNpc = null;
-            const choice = action.payload;
-
-            // --- NEW: Probabilistic Attribute Check Logic ---
-            if (choice.check) {
-                const { attribute, difficulty } = choice.check;
-                const attributeValue = state.player.attributes[attribute];
-                // Simple d20 roll system. Modifier is (value - 5) / 2. E.g., 5=0, 7=+1, 9=+2
-                const modifier = Math.floor((attributeValue - 5) / 2);
-                const roll = Math.floor(Math.random() * 20) + 1;
-                const total = roll + modifier;
-                
-                if (total >= difficulty) {
-                    // --- SUCCESS ---
-                    state.eventLog.push({ id: `elog-${Date.now()}`, message: `(Berhasil) Cek ${attribute} berhasil! (Kamu: ${total}, Butuh: ${difficulty})`, type: 'reward' });
-                    if (choice.effects) {
-                        applyEffects(state, choice.effects);
-                    }
-                    // Move to the next node on success
-                     const nextNode = state.currentChapter?.nodes.find(node => node.nodeId === choice.targetNodeId);
-                     if (nextNode) {
-                        state.currentNodeId = nextNode.nodeId;
-                        state.currentLocation = nextNode.location;
-                        state.currentTimeOfDay = nextNode.timeOfDay || state.currentTimeOfDay;
-                        state.isNarrativeComplete = false;
-                        if (nextNode.isChapterEnd) {
-                            state.isChapterEndModalOpen = true;
-                        } else {
-                            triggerRandomEvent(state);
-                            // --- NEW: Scavenging Mechanic ---
-                            if (!state.currentRandomEvent && !state.isInCombat && Math.random() < 0.20) {
-                                const scavengeableItems: ItemId[] = ['kain_bekas', 'keripik_basi', 'sekrup_baut', 'plastik_bekas', 'selotip'];
-                                const foundItemId = scavengeableItems[Math.floor(Math.random() * scavengeableItems.length)];
-                                const itemData = codex.items[foundItemId];
-
-                                const existingItem = state.player.inventory.find(i => i.itemId === foundItemId);
-                                if (existingItem) {
-                                    existingItem.quantity += 1;
-                                } else {
-                                    state.player.inventory.push({ itemId: foundItemId, quantity: 1 });
-                                }
-
-                                state.eventLog.push({ 
-                                    id: `scavenge-${Date.now()}`, 
-                                    message: `Saat berjalan, kamu menemukan: ${itemData.name}.`, 
-                                    type: 'info' 
-                                });
-                            }
-                        }
-                    }
-                } else {
-                    // --- FAILURE ---
-                    state.eventLog.push({ id: `elog-${Date.now()}`, message: `(Gagal) Cek ${attribute} gagal. (Kamu: ${total}, Butuh: ${difficulty})`, type: 'danger' });
-                    if (choice.failureEffects) {
-                        applyEffects(state, choice.failureEffects);
-                    }
-                    // Stay on the current node on failure, but re-enable choices
-                    state.isNarrativeComplete = true; 
-                }
-            } else {
-                // --- Standard Choice Logic (No Check) ---
-                if (choice.effects) {
-                    applyEffects(state, choice.effects);
-                }
-                const nextNode = state.currentChapter?.nodes.find(node => node.nodeId === choice.targetNodeId);
-                if (nextNode) {
-                    state.currentNodeId = nextNode.nodeId;
-                    state.currentLocation = nextNode.location;
-                    state.currentTimeOfDay = nextNode.timeOfDay || state.currentTimeOfDay;
-                    state.isNarrativeComplete = false;
-                    if (nextNode.isChapterEnd) {
-                        state.isChapterEndModalOpen = true;
-                    } else {
-                        triggerRandomEvent(state);
-                         // --- NEW: Scavenging Mechanic ---
-                        if (!state.currentRandomEvent && !state.isInCombat && Math.random() < 0.20) {
-                            const scavengeableItems: ItemId[] = ['kain_bekas', 'keripik_basi', 'sekrup_baut', 'plastik_bekas', 'selotip'];
-                            const foundItemId = scavengeableItems[Math.floor(Math.random() * scavengeableItems.length)];
-                            const itemData = codex.items[foundItemId];
-
-                            const existingItem = state.player.inventory.find(i => i.itemId === foundItemId);
-                            if (existingItem) {
-                                existingItem.quantity += 1;
-                            } else {
-                                state.player.inventory.push({ itemId: foundItemId, quantity: 1 });
-                            }
-
-                            state.eventLog.push({ 
-                                id: `scavenge-${Date.now()}`, 
-                                message: `Saat berjalan, kamu menemukan: ${itemData.name}.`, 
-                                type: 'info' 
-                            });
-                        }
-                    }
-                } else {
-                    state.error = `Pilihan salah: Tidak dapat menemukan node tujuan '${choice.targetNodeId}'.`;
-                }
-            }
-
-            // If combat was started by an effect, don't proceed further.
-            if (state.isInCombat) {
-                state.isNarrativeComplete = true;
-                saveGame('player1', state);
-                return;
-            }
-
-            saveGame('player1', state);
-        },
-        resolveEventChoice: (state, action: PayloadAction<RandomEventChoice>) => {
-            const choice = action.payload;
-            let combatStarted = false;
-            
-            // Apply effects
-            choice.effects.forEach(effect => {
-                let message = effect.message;
-                
-                switch(effect.type) {
-                    case 'GAIN_ITEM':
-                        if (effect.key && typeof effect.value === 'number') {
-                            const existingItem = state.player.inventory.find(i => i.itemId === effect.key);
-                            if (existingItem) {
-                                existingItem.quantity += effect.value;
-                            } else {
-                                state.player.inventory.push({ itemId: effect.key as ItemId, quantity: effect.value });
-                            }
-                            state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'reward' });
-                        }
-                        break;
-                    case 'LOSE_ITEM':
-                        if (effect.key && typeof effect.value === 'number') {
-                            const itemInInv = state.player.inventory.find(i => i.itemId === effect.key);
-                            if (itemInInv) {
-                                itemInInv.quantity -= effect.value;
-                                if (itemInInv.quantity <= 0) {
-                                    state.player.inventory = state.player.inventory.filter(i => i.itemId !== effect.key);
-                                }
-                                state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'info' });
-                            }
-                        }
-                        break;
-                    case 'CHANGE_SKRIP':
-                        if (typeof effect.value === 'number') {
-                            state.player.skrip += effect.value;
-                            state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'info' });
-                        }
-                        break;
-                    case 'CHANGE_REPUTATION':
-                         if (effect.key && typeof effect.value === 'number') {
-                             const factionId = effect.key as FactionId;
-                             let repChange = effect.value;
-
-                             if (repChange > 0) {
-                                const charismaBonus = Math.floor((state.player.attributes.karisma - 5) / 2);
-                                repChange += charismaBonus;
-                                repChange = Math.max(1, repChange); 
-                             }
-                             state.player.reputation[factionId] += repChange;
-                             
-                            if (effect.value > 0 && state.player.skillId) {
-                                const skill = codex.skills[state.player.skillId];
-                                const repBonusEffect = skill?.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'reputation_gain_bonus');
-                                if (repBonusEffect) {
-                                     const bonusRep = Math.ceil(effect.value * (repBonusEffect.value / 100));
-                                     state.player.reputation[factionId] += bonusRep;
-                                }
-                            }
-                             
-                             state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'info' });
-                         }
-                        break;
-                    case 'START_COMBAT':
-                         if (effect.key) {
-                            const enemyId = effect.key as EnemyId;
-                            const enemy = codex.enemies[enemyId];
-                            if (enemy) {
-                                combatStarted = true;
-                                state.isInCombat = true;
-                                state.currentEnemyId = enemyId;
-                                state.enemyCurrentHp = enemy.hp;
-                                state.combatLog = [{ id: `clog-${Date.now()}`, message: `${enemy.name} muncul!`, turn: 'system' }];
-                                state.eventLog.push({ id: `elog-${Date.now()}`, message: effect.message, type: 'danger' });
-                            }
-                        }
-                        break;
-                }
-            });
-
-            if (!combatStarted) {
-                state.currentRandomEvent = null;
-                state.activeNpc = null;
-                state.isNarrativeComplete = true; 
             }
         },
         closeChapterEndModal: (state) => {
             state.isChapterEndModalOpen = false;
         },
-        attack: (state) => {
-            if (!state.isInCombat || !state.currentEnemyId) return;
-
-            const enemy = codex.enemies[state.currentEnemyId];
-            
-            const { damage: playerDamage, isCritical } = calculatePlayerDamage(state.player);
-            state.enemyCurrentHp = Math.max(0, state.enemyCurrentHp - playerDamage);
-            
-            if (isCritical) {
-                 state.combatLog.unshift({ id: `clog-${Date.now()}`, message: `Serangan Kritikal! Kamu menyerang ${enemy.name} dan memberikan ${playerDamage} kerusakan.`, turn: 'player', type: 'critical' });
-            } else {
-                 state.combatLog.unshift({ id: `clog-${Date.now()}`, message: `Kamu menyerang ${enemy.name} dan memberikan ${playerDamage} kerusakan.`, turn: 'player', type: 'damage' });
-            }
-
-            if (state.enemyCurrentHp <= 0) {
-                state.isInCombat = false;
-                
-                let xpGained = enemy.xpValue;
-                if (state.player.skillId) {
-                    const skill = codex.skills[state.player.skillId];
-                    const xpBonusEffect = skill?.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'xp_gain_bonus');
-                    if (xpBonusEffect) {
-                        xpGained *= (1 + xpBonusEffect.value / 100);
-                    }
-                }
-                xpGained = Math.round(xpGained);
-                state.player.xp += xpGained;
-                state.eventLog.push({ id: `elog-${Date.now()}`, message: `Kamu mengalahkan ${enemy.name} dan mendapatkan ${xpGained} XP.`, type: 'reward' });
-                
-                const skripGained = Math.floor(Math.random() * (enemy.skripDrop[1] - enemy.skripDrop[0] + 1)) + enemy.skripDrop[0];
-                if (skripGained > 0) {
-                    state.player.skrip += skripGained;
-                    state.eventLog.push({ id: `skrip-${Date.now()}`, message: `Kamu mendapatkan ${skripGained} Skrip.`, type: 'reward' });
-                }
-
-                enemy.lootTable.forEach(loot => {
-                    if (Math.random() < loot.chance) {
-                        const quantity = Math.floor(Math.random() * (loot.quantity[1] - loot.quantity[0] + 1)) + loot.quantity[0];
-                        const existingItem = state.player.inventory.find(i => i.itemId === loot.itemId);
-                        if (existingItem) {
-                            existingItem.quantity += quantity;
-                        } else {
-                            state.player.inventory.push({ itemId: loot.itemId, quantity: quantity });
-                        }
-                        state.eventLog.push({ id: `loot-${Date.now()}-${loot.itemId}`, message: `Kamu mendapatkan: ${codex.items[loot.itemId].name} (x${quantity}).`, type: 'reward' });
-                    }
-                });
-
-                if (state.player.skillId) {
-                    const skill = codex.skills[state.player.skillId];
-                    const lootBonusEffect = skill?.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'loot_find_bonus');
-                    if (lootBonusEffect && (Math.random() * 100 < lootBonusEffect.value)) {
-                        if (enemy.lootTable.length > 0) {
-                             const extraLoot = enemy.lootTable[Math.floor(Math.random() * enemy.lootTable.length)];
-                             const quantity = Math.floor(Math.random() * (extraLoot.quantity[1] - extraLoot.quantity[0] + 1)) + extraLoot.quantity[0];
-                             const existingItem = state.player.inventory.find(i => i.itemId === extraLoot.itemId);
-                             if (existingItem) {
-                                 existingItem.quantity += quantity;
-                             } else {
-                                 state.player.inventory.push({ itemId: extraLoot.itemId, quantity });
-                             }
-                             state.eventLog.push({ id: `loot-${Date.now()}`, message: `(Keahlian) Kamu menemukan item tambahan: ${codex.items[extraLoot.itemId].name} (x${quantity}).`, type: 'reward' });
-                        }
-                    }
-                }
-
-                const playerBeforeLevel = state.player.level;
-                const playerAfterLevelCheck = checkLevelUp(state.player);
-                if(playerAfterLevelCheck.level > playerBeforeLevel) {
-                     state.eventLog.push({ id: `elog-${Date.now()}-lvl`, message: `Selamat! Kamu mencapai Level ${playerAfterLevelCheck.level}!`, type: 'reward' });
-                }
-                state.player = playerAfterLevelCheck;
-
-                if (state.currentRandomEvent) {
-                    state.currentRandomEvent = null;
-                    state.activeNpc = null;
-                }
-
-                state.currentEnemyId = null;
-                state.isNarrativeComplete = true; 
-                state.combatLog = []; 
-
-                saveGame('player1', state);
-                return;
-            }
-
-            let dodgeChance = 0;
-             if (state.player.skillId) {
-                const skill = codex.skills[state.player.skillId];
-                const dodgeBonusEffect = skill?.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'dodge_chance');
-                if (dodgeBonusEffect) {
-                    dodgeChance = dodgeBonusEffect.value;
-                }
-            }
-            if (Math.random() * 100 < dodgeChance) {
-                 state.combatLog.unshift({ id: `clog-${Date.now() + 1}`, message: `Kamu berhasil menghindari serangan ${enemy.name}!`, turn: 'system', type: 'dodge' });
-                 return;
-            }
-
-            const enemyDamage = calculateEnemyDamage(enemy);
-            const playerDefense = calculatePlayerDefense(state.player);
-            const finalDamage = Math.max(0, enemyDamage - playerDefense);
-
-            state.player.hp -= finalDamage;
-            state.combatLog.unshift({ id: `clog-${Date.now() + 1}`, message: `${enemy.name} menyerang dan kamu kehilangan ${finalDamage} HP.`, turn: 'enemy', type: 'damage' });
-
-            if (state.player.hp <= 0) {
-                handleDefeat(state);
-            }
+        setActiveCompanion: (state, action: PayloadAction<CompanionId | null>) => {
+            state.player.activeCompanion = action.payload;
         },
-        flee: (state) => {
-            if (!state.isInCombat) return;
-            
-            let fleeChance = 75;
-            if (state.player.skillId) {
-                const skill = codex.skills[state.player.skillId];
-                const fleeBonusEffect = skill?.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'flee_chance_bonus');
-                if (fleeBonusEffect) {
-                    fleeChance += fleeBonusEffect.value;
-                }
-            }
-
-            if (Math.random() * 100 < fleeChance) {
-                state.isInCombat = false;
-                state.eventLog.push({ id: `elog-${Date.now()}`, message: `Kamu berhasil kabur.`, type: 'info' });
-                state.combatLog = [];
-                state.currentEnemyId = null;
-                
-                if (state.currentRandomEvent) {
-                    state.currentRandomEvent = null;
-                    state.activeNpc = null;
-                }
-                state.isNarrativeComplete = true; 
-            } else {
-                if (!state.currentEnemyId) return;
-                const enemy = codex.enemies[state.currentEnemyId];
-                state.eventLog.push({ id: `elog-${Date.now()}`, message: `Gagal kabur!`, type: 'danger' });
-                
-                const enemyDamage = calculateEnemyDamage(enemy);
-                const playerDefense = calculatePlayerDefense(state.player);
-                const finalDamage = Math.max(0, enemyDamage - playerDefense);
-
-                state.player.hp -= finalDamage;
-                state.combatLog.unshift({ id: `clog-${Date.now() + 1}`, message: `${enemy.name} menyerang saat kamu mencoba kabur, kamu kehilangan ${finalDamage} HP.`, turn: 'enemy' });
-
-                if (state.player.hp <= 0) {
-                    handleDefeat(state);
-                }
-            }
-        },
-        craftItem: (state, action: PayloadAction<Recipe>) => {
-            const recipe = action.payload;
-            
-            const hasIngredients = recipe.ingredients.every(ing => {
-                const itemInInv = state.player.inventory.find(i => i.itemId === ing.itemId);
-                return itemInInv && itemInInv.quantity >= ing.quantity;
-            });
-
-            if(hasIngredients) {
-                let resourcesSaved = false;
-                if (state.player.skillId) {
-                    const skill = codex.skills[state.player.skillId];
-                    const saverEffect = skill?.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'crafting_resource_saver_chance');
-                    if (saverEffect && (Math.random() * 100 < saverEffect.value)) {
-                        resourcesSaved = true;
-                    }
-                }
-                
-                if (!resourcesSaved) {
-                    recipe.ingredients.forEach(ing => {
-                        const itemInInv = state.player.inventory.find(i => i.itemId === ing.itemId);
-                        if (itemInInv) {
-                            itemInInv.quantity -= ing.quantity;
-                        }
-                    });
-                     state.player.inventory = state.player.inventory.filter(i => i.quantity > 0);
-                }
-                
-                const existingResultItem = state.player.inventory.find(i => i.itemId === recipe.result.itemId);
-                if (existingResultItem) {
-                    existingResultItem.quantity += recipe.result.quantity;
-                } else {
-                    state.player.inventory.push({ ...recipe.result });
-                }
-
-                let successMessage = `Kamu berhasil meracik ${codex.items[recipe.result.itemId].name}.`;
-                if(resourcesSaved) successMessage += " (Keahlian) Kamu tidak menggunakan material apapun!";
-                state.eventLog.push({ id: `craft-${Date.now()}`, message: successMessage, type: 'reward' });
-            }
-        },
-        useItem: (state, action: PayloadAction<ItemId>) => {
-            const itemId = action.payload;
-            const itemInInventory = state.player.inventory.find(i => i.itemId === itemId);
-            const itemData = codex.items[itemId];
-
-            if (!itemInInventory || !itemData || itemData.type !== 'consumable') return;
-
-            const healEffect = itemData.effects?.find(e => e.key === 'healing_effectiveness');
-            if (healEffect) {
-                let healAmount = healEffect.value;
-
-                if (state.player.skillId) {
-                    const skill = codex.skills[state.player.skillId];
-                    const healBonusEffect = skill?.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'healing_effectiveness');
-                    if (healBonusEffect) {
-                        healAmount *= (1 + healBonusEffect.value / 100);
-                    }
-                }
-                
-                healAmount = Math.round(healAmount);
-                state.player.hp = Math.min(state.player.maxHp, state.player.hp + healAmount);
-                
-                state.eventLog.push({ 
-                    id: `use-${Date.now()}`, 
-                    message: `Kamu menggunakan ${itemData.name} dan memulihkan ${healAmount} HP.`, 
-                    type: 'reward' 
-                });
-            }
-
-            itemInInventory.quantity -= 1;
-            if (itemInInventory.quantity <= 0) {
-                state.player.inventory = state.player.inventory.filter(i => i.itemId !== itemId);
-            }
+        resolveEventChoice: (state, action: PayloadAction<RandomEventChoice>) => {
+            applyEffects(state, action.payload.effects);
+            state.currentRandomEvent = null;
+            state.activeNpc = null;
+            state.isNarrativeComplete = true;
         },
         increaseAttribute: (state, action: PayloadAction<AttributeId>) => {
             if (state.player.unspentAttributePoints > 0) {
@@ -696,44 +304,200 @@ const gameSlice = createSlice({
                 state.player.unspentAttributePoints--;
             }
         },
-        equipItem: (state, action: PayloadAction<ItemId>) => {
+        useItem: (state, action: PayloadAction<ItemId>) => {
             const itemId = action.payload;
-            const itemData = codex.items[itemId];
-            if (!itemData.equipmentSlot) return;
-
-            const slot = itemData.equipmentSlot;
             const itemInInventory = state.player.inventory.find(i => i.itemId === itemId);
-            if (!itemInInventory) return;
-
-            const currentlyEquipped = state.player.equippedItems[slot];
-            if (currentlyEquipped) {
-                const oldItem = state.player.inventory.find(i => i.itemId === currentlyEquipped);
-                if (oldItem) {
-                    oldItem.quantity++;
-                } else {
-                    state.player.inventory.push({ itemId: currentlyEquipped, quantity: 1 });
+            const itemDetails = codex.items[itemId];
+            if (itemInInventory && itemDetails?.type === 'consumable' && itemDetails.effects) {
+                itemDetails.effects.forEach(effect => {
+                    if (effect.key === 'healing_effectiveness') {
+                        const healAmount = effect.value;
+                        state.player.hp = Math.min(state.player.maxHp, state.player.hp + healAmount);
+                        state.eventLog.unshift({ id: `elog-${Date.now()}`, message: `Kamu menggunakan ${itemDetails.name}, memulihkan ${healAmount} HP.`, type: 'reward'});
+                    }
+                });
+                itemInInventory.quantity--;
+                if (itemInInventory.quantity <= 0) {
+                    state.player.inventory = state.player.inventory.filter(i => i.itemId !== itemId);
                 }
             }
-
-            itemInInventory.quantity--;
-            state.player.equippedItems[slot] = itemId;
-            if (itemInInventory.quantity <= 0) {
-                state.player.inventory = state.player.inventory.filter(i => i.itemId !== itemId);
+        },
+        equipItem: (state, action: PayloadAction<ItemId>) => {
+            const itemDetails = codex.items[action.payload];
+            if (itemDetails?.equipmentSlot) {
+                const { equipmentSlot } = itemDetails;
+                const currentItem = state.player.equippedItems[equipmentSlot];
+                if (currentItem) { // Unequip current item first
+                    const itemInInv = state.player.inventory.find(i => i.itemId === currentItem);
+                    if (itemInInv) itemInInv.quantity++;
+                    else state.player.inventory.push({ itemId: currentItem, quantity: 1 });
+                }
+                state.player.equippedItems[equipmentSlot] = action.payload;
             }
         },
         unequipItem: (state, action: PayloadAction<EquipmentSlot>) => {
             const slot = action.payload;
-            const equippedItemId = state.player.equippedItems[slot];
-            if (!equippedItemId) return;
-
-            const existingItem = state.player.inventory.find(i => i.itemId === equippedItemId);
-            if (existingItem) {
-                existingItem.quantity++;
-            } else {
-                state.player.inventory.push({ itemId: equippedItemId, quantity: 1 });
+            const itemId = state.player.equippedItems[slot];
+            if (itemId) {
+                delete state.player.equippedItems[slot];
+                const itemInInv = state.player.inventory.find(i => i.itemId === itemId);
+                if (itemInInv) itemInInv.quantity++;
+                else state.player.inventory.push({ itemId, quantity: 1 });
             }
+        },
+        craftItem: (state, action: PayloadAction<Recipe>) => {
+            const { recipe } = { recipe: action.payload };
+            const canCraft = recipe.ingredients.every(ing => state.player.inventory.find(i => i.itemId === ing.itemId && i.quantity >= ing.quantity));
+            if (canCraft) {
+                recipe.ingredients.forEach(ing => {
+                    const item = state.player.inventory.find(i => i.itemId === ing.itemId)!;
+                    item.quantity -= ing.quantity;
+                });
+                state.player.inventory = state.player.inventory.filter(i => i.quantity > 0);
+                const resultItem = state.player.inventory.find(i => i.itemId === recipe.result.itemId);
+                if (resultItem) resultItem.quantity += recipe.result.quantity;
+                else state.player.inventory.push({ ...recipe.result });
+                state.eventLog.unshift({ id: `elog-${Date.now()}`, message: `Berhasil membuat ${codex.items[recipe.result.itemId].name}.`, type: 'reward'});
+            }
+        },
+        flee: (state) => {
+            if (!state.isInCombat) return;
+            const fleeChance = 50 + (state.player.attributes.ketangkasan * 2);
+            if (Math.random() * 100 < fleeChance) {
+                state.isInCombat = false;
+                state.eventLog.unshift({ id: `elog-${Date.now()}`, message: "Kamu berhasil kabur!", type: 'info' });
+            } else {
+                state.combatLog.unshift({ id: `clog-${Date.now()}`, message: "Gagal kabur!", source: 'system' });
+                const enemy = codex.enemies[state.currentEnemyId!];
+                const enemyDamage = Math.max(1, calculateEnemyDamage(enemy) - calculatePlayerDefense(state.player));
+                state.player.hp -= enemyDamage;
+                state.combatLog.unshift({ id: `clog-${Date.now() + 1}`, message: `${enemy.name} menyerang saat kamu kabur, kamu kehilangan ${enemyDamage} HP.`, source: 'enemy', type: 'damage' });
+                if (state.player.hp <= 0) handleDefeat(state);
+            }
+        },
+        attack: (state) => {
+            if (!state.isInCombat || !state.currentEnemyId) return;
+            const enemy = codex.enemies[state.currentEnemyId];
+            const playerDefense = calculatePlayerDefense(state.player);
+
+            const { damage: playerDamage, isCritical } = calculatePlayerDamage(state.player);
+            const finalPlayerDamage = Math.max(1, playerDamage - enemy.defense);
+            state.enemyCurrentHp -= finalPlayerDamage;
+            state.combatLog.unshift({ id: `clog-${Date.now()}`, message: `${state.player.name} ${isCritical ? 'melancarkan serangan KRITIS dan' : ''} memberikan ${finalPlayerDamage} kerusakan.`, source: 'player', type: isCritical ? 'critical' : 'damage' });
+
+            const checkVictory = () => {
+                if (state.enemyCurrentHp <= 0) {
+                    const { xpValue, skripDrop, lootTable } = enemy;
+                    state.player.xp += xpValue;
+                    const skripGain = Math.floor(Math.random() * (skripDrop[1] - skripDrop[0] + 1)) + skripDrop[0];
+                    state.player.skrip += skripGain;
+                    state.eventLog.unshift({ id: `elog-${Date.now()}`, message: `Kamu mengalahkan ${enemy.name}! Mendapatkan ${xpValue} XP & ${skripGain} Skrip.`, type: 'reward' });
+                    lootTable.forEach(loot => {
+                        if (Math.random() < loot.chance) {
+                            const quantity = Math.floor(Math.random() * (loot.quantity[1] - loot.quantity[0] + 1)) + loot.quantity[0];
+                            const itemInInv = state.player.inventory.find(i => i.itemId === loot.itemId);
+                            if (itemInInv) itemInInv.quantity += quantity;
+                            else state.player.inventory.push({ itemId: loot.itemId, quantity });
+                            state.eventLog.unshift({ id: `elog-${Date.now() + 1}`, message: `Mendapatkan ${quantity} ${codex.items[loot.itemId].name}.`, type: 'reward' });
+                        }
+                    });
+                    state.player = checkLevelUp(state.player);
+                    state.isInCombat = false;
+                    return true;
+                }
+                return false;
+            };
+
+            if (checkVictory()) return;
             
-            delete state.player.equippedItems[slot];
+            if (state.player.activeCompanion === 'davina') {
+                const companion = codex.companions.davina;
+                const companionDamage = Math.max(1, companion.bonusValue - enemy.defense);
+                state.enemyCurrentHp -= companionDamage;
+                state.combatLog.unshift({ id: `clog-${Date.now() + 0.5}`, message: `${companion.name} membantu, memberikan ${companionDamage} kerusakan.`, source: 'companion', type: 'damage' });
+                if (checkVictory()) return;
+            }
+
+            const dodgeChance = (state.player.attributes.ketangkasan - 5) * 2 + (codex.skills[state.player.skillId!]?.effects.find(e => e.key === 'dodge_chance')?.value || 0);
+            if (Math.random() * 100 < dodgeChance) {
+                 state.combatLog.unshift({ id: `clog-${Date.now() + 1}`, message: "Kamu berhasil menghindar!", source: 'system', type: 'dodge' });
+            } else {
+                const enemyDamage = Math.max(1, calculateEnemyDamage(enemy) - playerDefense);
+                state.player.hp -= enemyDamage;
+                state.combatLog.unshift({ id: `clog-${Date.now() + 1}`, message: `${enemy.name} menyerang, kamu kehilangan ${enemyDamage} HP.`, source: 'enemy', type: 'damage' });
+                if (state.player.hp <= 0) handleDefeat(state);
+            }
+        },
+        internal_makeChoice: (state, action: PayloadAction<ChapterNodeChoice>) => {
+            state.currentRandomEvent = null;
+            state.activeNpc = null;
+            const choice = action.payload;
+
+            if (choice.check) {
+                const { attribute, difficulty } = choice.check;
+                const attributeValue = state.player.attributes[attribute];
+                let modifier = Math.floor((attributeValue - 5) / 2);
+                let companionBonus = 0;
+                let companionName = '';
+
+                if (state.player.activeCompanion) {
+                    const companion = codex.companions[state.player.activeCompanion];
+                    if (companion.bonusType === 'SKILL_CHECK' && companion.bonusKey === attribute) {
+                        companionBonus = companion.bonusValue;
+                        companionName = companion.name;
+                    }
+                }
+
+                const roll = Math.floor(Math.random() * 20) + 1;
+                const total = roll + modifier + companionBonus;
+                
+                const bonusText = companionBonus > 0 ? ` + ${companionBonus} (${companionName})` : '';
+                const baseLog = `(Cek ${attribute}: ${roll} + ${modifier}${bonusText} = ${total}, Butuh: ${difficulty})`;
+
+                if (total >= difficulty) {
+                    state.eventLog.push({ id: `elog-${Date.now()}`, message: `(Berhasil) ${baseLog}`, type: 'reward' });
+                    if (choice.effects) applyEffects(state, choice.effects);
+                    
+                     const nextNode = state.currentChapter?.nodes.find(node => node.nodeId === choice.targetNodeId);
+                     if (nextNode) {
+                        state.currentNodeId = nextNode.nodeId;
+                        state.currentLocation = nextNode.location;
+                        state.currentTimeOfDay = nextNode.timeOfDay || state.currentTimeOfDay;
+                        if (!state.player.visitedLocations.includes(nextNode.location)) {
+                            state.player.visitedLocations.push(nextNode.location);
+                        }
+                        state.isNarrativeComplete = false;
+                        if (nextNode.isChapterEnd) {
+                            state.isChapterEndModalOpen = true;
+                        }
+                    }
+                } else {
+                    state.eventLog.push({ id: `elog-${Date.now()}`, message: `(Gagal) ${baseLog}`, type: 'danger' });
+                    if (choice.failureEffects) applyEffects(state, choice.failureEffects);
+                    state.isNarrativeComplete = true; 
+                }
+            } else {
+                if (choice.effects) applyEffects(state, choice.effects);
+                const nextNode = state.currentChapter?.nodes.find(node => node.nodeId === choice.targetNodeId);
+                if (nextNode) {
+                    state.currentNodeId = nextNode.nodeId;
+                    state.currentLocation = nextNode.location;
+                    state.currentTimeOfDay = nextNode.timeOfDay || state.currentTimeOfDay;
+                     if (!state.player.visitedLocations.includes(nextNode.location)) {
+                        state.player.visitedLocations.push(nextNode.location);
+                    }
+                    state.isNarrativeComplete = false;
+                    if (nextNode.isChapterEnd) {
+                        state.isChapterEndModalOpen = true;
+                    }
+                } else {
+                    state.error = `Pilihan salah: Tidak dapat menemukan node tujuan '${choice.targetNodeId}'.`;
+                }
+            }
+
+            if (state.isInCombat) {
+                state.isNarrativeComplete = true;
+            }
         },
     },
     extraReducers: (builder) => {
@@ -752,6 +516,9 @@ const gameSlice = createSlice({
                     state.currentNodeId = startNode.nodeId;
                     state.currentLocation = startNode.location;
                     state.currentTimeOfDay = startNode.timeOfDay || 'siang';
+                    if (!state.player.visitedLocations.includes(startNode.location)) {
+                        state.player.visitedLocations.push(startNode.location);
+                    }
                 }
                 state.isLoading = false;
                 saveGame('player1', state);
@@ -762,9 +529,40 @@ const gameSlice = createSlice({
             })
             .addCase(startNextChapter.pending, (state) => {
                 state.isLoading = true;
+            })
+            .addCase(generateRandomEvent.pending, (state) => {
+                // Optional: add a subtle loading indicator for the event itself
+            })
+            .addCase(generateRandomEvent.fulfilled, (state, action: PayloadAction<RandomEvent>) => {
+                const event = action.payload;
+                state.currentRandomEvent = event;
+                if (event.npc.name !== 'Sistem') {
+                    const portraitUrl = event.npc.faction ? getFactionImageUrl(event.npc.faction) : getNpcImageUrl();
+                    if (portraitUrl) {
+                        state.activeNpc = { name: event.npc.name, portraitUrl };
+                    }
+                }
+                state.isNarrativeComplete = false;
+            })
+            .addCase(generateRandomEvent.rejected, (state, action) => {
+                console.warn("Gagal membuat event dinamis, fallback ke tidak ada event.", action.payload);
+                state.currentRandomEvent = null;
+                state.activeNpc = null;
+                state.isNarrativeComplete = true; // prevent getting stuck
             });
     },
 });
+
+export const makeChoice = (choice: ChapterNodeChoice) => (dispatch: any, getState: () => RootState) => {
+    dispatch(gameSlice.actions.internal_makeChoice(choice));
+    const state = getState().game;
+    
+    if (state.currentNodeId && !state.currentChapter?.nodes.find(n => n.nodeId === state.currentNodeId)?.isChapterEnd) {
+         triggerRandomEvent(state, dispatch);
+    }
+    
+    saveGame('player1', getState().game);
+};
 
 export const {
     setLoading,
@@ -772,16 +570,16 @@ export const {
     startGame,
     loadGame,
     setPlayerCharacter,
-    makeChoice,
-    resolveEventChoice,
     closeChapterEndModal,
-    attack,
-    flee,
-    craftItem,
-    useItem,
-    increaseAttribute,
-    equipItem,
-    unequipItem,
+    setActiveCompanion,
+    attack, 
+    flee, 
+    craftItem, 
+    useItem, 
+    increaseAttribute, 
+    equipItem, 
+    unequipItem, 
+    resolveEventChoice
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

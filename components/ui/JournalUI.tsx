@@ -13,20 +13,24 @@ const JournalUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen,
         .map(flag => codex.quests[flag]);
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-overlay terminal-modal" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <h2>Jurnal Misi</h2>
-                <button onClick={onClose} className="close-button">X</button>
-                <ul className="journal-list">
-                    {activeQuests.length > 0 ? activeQuests.map(quest => (
-                        <li key={quest.name}>
-                            <div className="quest-info">
-                                <strong>{quest.name}</strong>
-                                <p>{quest.description}</p>
-                            </div>
-                        </li>
-                    )) : <li>Tidak ada misi aktif.</li>}
-                </ul>
+                <div className="terminal-header">
+                    <span className="terminal-title">LOG MISI v1.3a</span>
+                    <button onClick={onClose} className="close-button">X</button>
+                </div>
+                <div className="terminal-body">
+                    <ul className="journal-list">
+                        {activeQuests.length > 0 ? activeQuests.map(quest => (
+                            <li key={quest.name}>
+                                <div className="quest-info">
+                                    <strong>{quest.name}</strong>
+                                    <p>// {quest.description}</p>
+                                </div>
+                            </li>
+                        )) : <li>Tidak ada entri log misi aktif.</li>}
+                    </ul>
+                </div>
             </div>
         </div>
     );

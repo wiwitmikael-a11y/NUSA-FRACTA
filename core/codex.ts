@@ -456,5 +456,34 @@ export const codex: Codex = {
         name: 'Bantu Patroli Republik',
         description: 'Sebuah patroli Republik Merdeka meminta bantuanmu untuk membersihkan area dari perampok.',
     }
+  },
+  companions: {
+      'ayra': {
+          id: 'ayra',
+          name: 'Ayra',
+          description: 'Seorang mekanik jenius dengan tangan yang terampil dan otak yang tajam. Dia bisa melihat solusi di antara tumpukan rongsokan.',
+          portraitUrl: 'https://raw.githubusercontent.com/wiwitmikael-a11y/nusa-FRACTA-assets/main/portraits/companion_ayra.png',
+          bonusType: 'SKILL_CHECK',
+          bonusKey: 'kecerdasan',
+          bonusValue: 2,
+      },
+      'davina': {
+          id: 'davina',
+          name: 'Davina',
+          description: 'Seorang prajurit idealis dari Republik Merdeka. Dia memegang teguh keyakinan pada hukum dan ketertiban di dunia yang kacau.',
+          portraitUrl: 'https://raw.githubusercontent.com/wiwitmikael-a11y/nusa-FRACTA-assets/main/portraits/companion_davina.png',
+          bonusType: 'COMBAT_ASSIST',
+          bonusKey: 'damage',
+          bonusValue: 5,
+      },
+      'raizen': {
+          id: 'raizen',
+          name: 'Raizen',
+          description: 'Seorang pemburu misterius yang bergerak seperti bayangan. Dia lebih nyaman berbicara dengan angin daripada dengan manusia.',
+          portraitUrl: 'https://raw.githubusercontent.com/wiwitmikael-a11y/nusa-FRACTA-assets/main/portraits/companion_raizen.png',
+          bonusType: 'SKILL_CHECK',
+          bonusKey: 'ketangkasan',
+          bonusValue: 2,
+      }
   }
 };

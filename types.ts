@@ -12,6 +12,8 @@ export type NodeId = string;
 export type ChapterId = string;
 export type TimeOfDay = 'pagi' | 'siang' | 'sore' | 'malam';
 export type EquipmentSlot = 'meleeWeapon' | 'armor';
+export type CompanionId = 'ayra' | 'davina' | 'raizen';
+export type CompanionBonusType = 'SKILL_CHECK' | 'COMBAT_ASSIST';
 
 // --- Player & Character ---
 export interface PlayerAttributes {
@@ -42,6 +44,9 @@ export interface Player {
   skillId: SkillId | null;
   portraitUrl: string | null;
   skrip: number;
+  companions: CompanionId[];
+  activeCompanion: CompanionId | null;
+  visitedLocations: string[];
 }
 
 // --- Story & Narrative ---
@@ -64,8 +69,8 @@ export interface ChoiceCondition {
 }
 
 export interface ChoiceEffect {
-    type: 'GAIN_ITEM' | 'LOSE_ITEM' | 'GAIN_XP' | 'CHANGE_HP' | 'SET_FLAG' | 'START_COMBAT';
-    key?: ItemId | QuestId | EnemyId;
+    type: 'GAIN_ITEM' | 'LOSE_ITEM' | 'GAIN_XP' | 'CHANGE_HP' | 'SET_FLAG' | 'START_COMBAT' | 'RECRUIT_COMPANION';
+    key?: ItemId | QuestId | EnemyId | CompanionId;
     value?: number;
     message: string;
 }
@@ -147,7 +152,7 @@ export interface EventLogMessage {
 export interface CombatLogMessage {
   id:string;
   message: string;
-  turn: 'player' | 'enemy' | 'system'; // System for things like dodge/crit
+  source: 'player' | 'enemy' | 'system' | 'companion';
   type?: 'damage' | 'dodge' | 'critical';
 }
 
@@ -160,6 +165,7 @@ export interface Codex {
   enemies: Record<EnemyId, Enemy>;
   recipes: Record<string, Recipe>;
   quests: Record<QuestId, Quest>;
+  companions: Record<CompanionId, Companion>;
 }
 
 export interface Item {
@@ -210,4 +216,14 @@ export interface Effect {
   type: 'ATTRIBUTE_MOD' | 'SKILL_BONUS';
   key: AttributeId | 'melee_damage_bonus' | 'healing_effectiveness' | 'flee_chance_bonus' | 'xp_gain_bonus' | 'loot_find_bonus' | 'base_hp_bonus' | 'damage_resistance' | 'dodge_chance' | 'critical_hit_chance' | 'better_prices_bonus' | 'reputation_gain_bonus' | 'crafting_resource_saver_chance' | 'status_effect_resistance' | 'flat_damage_bonus';
   value: number;
+}
+
+export interface Companion {
+    id: CompanionId;
+    name: string;
+    description: string;
+    portraitUrl: string;
+    bonusType: CompanionBonusType;
+    bonusKey: AttributeId | 'damage';
+    bonusValue: number;
 }

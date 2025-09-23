@@ -42,9 +42,13 @@ const LoadingOverlay: React.FC = () => {
 
     return (
         <div className="loading-overlay">
+            <h3>Atharrazka Core sedang...</h3>
             <p>{message}</p>
             <div className="progress-bar-container">
                 <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
+            </div>
+            <div className="loading-disclaimer">
+                Proses ini mungkin memakan waktu beberapa saat, tergantung pada kondisi jaringan. Mohon jangan tutup jendela ini.
             </div>
         </div>
     );

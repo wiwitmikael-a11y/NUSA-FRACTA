@@ -1,6 +1,7 @@
 // services/geminiService.ts
 import { GoogleGenAI, Type } from "@google/genai";
-import type { GameState, Chapter } from '../types';
+import type { GameState, Chapter, RandomEvent } from '../types';
+import { codex } from '../core/codex';
 
 // FIX: Initialize GoogleGenAI with a named apiKey object.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -10,6 +11,9 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
     const inventoryList = player.inventory.map(i => `${i.itemId} (x${i.quantity})`).join(', ') || 'kosong';
     const attributes = `Kekuatan ${player.attributes.kekuatan}, Ketangkasan ${player.attributes.ketangkasan}, Kecerdasan ${player.attributes.kecerdasan}, Karisma ${player.attributes.karisma}`;
     const reputation = Object.entries(player.reputation).map(([faction, value]) => `${faction}: ${value}`).join(', ');
+    const activeCompanionName = player.activeCompanion ? codex.companions[player.activeCompanion].name : 'Tidak ada';
+    const recruitedCompanions = player.companions.map(id => codex.companions[id].name).join(', ') || 'Tidak ada';
+
 
     return `
         Anda adalah Game Master untuk sebuah game RPG teks post-apocalyptic bernama NUSA FRACTA, berlatar di reruntuhan Jakarta, Indonesia.
@@ -32,6 +36,7 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
             - Contoh: Pilihan "Coba membobol kunci" bisa berhasil membuka pintu (effects) atau gagal dan merusak alat (failureEffects).
         11. **Konsekuensi Pilihan**: Setiap pilihan harus memiliki dampak. Gunakan 'effects' (untuk sukses/pilihan simpel) dan 'failureEffects' (untuk kegagalan cek).
         12. **Validitas Node Tujuan**: Pastikan setiap 'targetNodeId' mengacu pada 'nodeId' yang ADA di dalam daftar 'nodes' yang Anda hasilkan.
+        13. **Companions**: Pemain dapat merekrut companion. Gunakan efek \`{ "type": "RECRUIT_COMPANION", "key": "ayra", "message": "Ayra setuju untuk bergabung denganmu!" }\`. Setelah direkrut, companion akan mengikuti pemain. Libatkan companion yang aktif dalam dialog dan narasi. Berikan mereka kepribadian. Companion juga dapat memberikan bonus pasif pada 'check' atribut atau dalam pertarungan, yang akan ditangani oleh game engine.
 
         Lore Dunia NUSA FRACTA (Gunakan ini sebagai inspirasi):
         - Faksi Utama: Sisa Kemanusiaan, Gerombolan Besi (raider kejam), Teknokrat (pencari teknologi), Geng Bangsat (anarkis), Pemburu Agraria (survivalis alam), Republik Merdeka (pembangun peradaban), Saudagar Jalanan (pedagang), Sekte Pustaka (penjaga pengetahuan).
@@ -41,7 +46,7 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
         Instruksi Tambahan untuk Bab Ini:
         - Ciptakan narasi yang epik dan bercabang. Manfaatkan mekanik 'check' probabilistik untuk menciptakan momen menegangkan.
         - Perkenalkan setidaknya satu faksi secara mendalam.
-        - Berikan kesempatan untuk bertemu salah satu calon companion (Ayra, Davina, atau Raizen).
+        - Berikan kesempatan untuk bertemu salah satu calon companion (Ayra, Davina, atau Raizen) dan kemungkinan untuk merekrutnya.
         - Variasikan tantangan: dialog, eksplorasi, teka-teki, dan pertarungan.
         - Pastikan akhir bab terasa seperti sebuah pencapaian.
 
@@ -54,6 +59,8 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
         - Inventaris: ${inventoryList}
         - Reputasi Faksi: ${reputation}
         - Lokasi Saat Ini: ${gameState.currentLocation}
+        - Companion Aktif: ${activeCompanionName}
+        - Companion yang Sudah Direkru
         - Story Flags Aktif: ${JSON.stringify(player.storyFlags)}
 
         Tujuan Bab Ini:
@@ -170,5 +177,101 @@ export const generateChapter = async (gameState: GameState, chapterDetails: { ti
     } catch (error) {
         console.error("Error generating chapter with Gemini:", error);
         throw new Error("Gagal menghasilkan alur cerita baru. Mungkin ada masalah dengan koneksi atau API key.");
+    }
+};
+
+export const generateRandomEvent = async (gameState: GameState): Promise<RandomEvent> => {
+    const { player, currentLocation, currentTimeOfDay } = gameState;
+    const inventoryList = player.inventory.map(i => `${i.itemId} (x${i.quantity})`).join(', ') || 'kosong';
+
+    const prompt = `
+        Anda adalah Game Master untuk RPG teks NUSA FRACTA. Buat satu event acak yang singkat dan mandiri dalam format JSON.
+        Event harus relevan dengan konteks pemain saat ini. Buatlah sesuatu yang unik dan imersif.
+        
+        Konteks Pemain:
+        - Lokasi: ${currentLocation}
+        - Waktu: ${currentTimeOfDay}
+        - HP: ${player.hp}/${player.maxHp}
+        - Inventaris: ${inventoryList}
+
+        Aturan:
+        1. HARUS valid JSON sesuai skema.
+        2. Buat narasi singkat (2-3 kalimat).
+        3. Sediakan 2-3 pilihan yang bermakna.
+        4. Efek harus valid: 'GAIN_ITEM', 'LOSE_ITEM', 'GAIN_XP', 'CHANGE_HP', 'CHANGE_REPUTATION', 'START_COMBAT', 'SET_FLAG', 'NOTHING', 'CHANGE_SKRIP'.
+        5. 'key' untuk item/musuh/faksi harus valid dari codex (contoh: 'pipa_besi', 'perampok', 'republik_merdeka').
+        6. NPC harus terasa hidup, bisa dari faksi yang ada atau warga biasa.
+        7. Jaga agar tetap singkat dan fokus. Ini adalah gangguan kecil, bukan misi besar.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        id: { type: Type.STRING },
+                        type: { type: Type.STRING },
+                        npc: {
+                            type: Type.OBJECT,
+                            properties: {
+                                name: { type: Type.STRING },
+                                portraitKey: { type: Type.STRING },
+                                faction: { type: Type.STRING, nullable: true },
+                            },
+                            required: ['name', 'portraitKey']
+                        },
+                        narrative: { type: Type.STRING },
+                        choices: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    text: { type: Type.STRING },
+                                    condition: {
+                                        type: Type.ARRAY,
+                                        nullable: true,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                type: { type: Type.STRING },
+                                                key: { type: Type.STRING },
+                                                value: { type: Type.NUMBER }
+                                            },
+                                            required: ['type', 'key', 'value']
+                                        }
+                                    },
+                                    effects: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                type: { type: Type.STRING },
+                                                key: { type: Type.STRING, nullable: true },
+                                                value: { type: Type.NUMBER, nullable: true },
+                                                message: { type: Type.STRING }
+                                            },
+                                            required: ['type', 'message']
+                                        }
+                                    }
+                                },
+                                required: ['text', 'effects']
+                            }
+                        }
+                    },
+                    required: ['id', 'type', 'npc', 'narrative', 'choices']
+                }
+            }
+        });
+        
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as RandomEvent;
+
+    } catch (error) {
+        console.error("Error generating random event with Gemini:", error);
+        throw new Error("Gagal menghasilkan event acak.");
     }
 };

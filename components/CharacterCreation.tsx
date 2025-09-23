@@ -4,6 +4,7 @@ import { AppDispatch } from '../store/store';
 import { startGame, setPlayerCharacter, generateAndStartChapter } from '../store/gameSlice';
 import { codex } from '../core/codex';
 import { PlayerAttributes } from '../types';
+import soundService from '../services/soundService';
 
 const randomNames = ['Bayu', 'Citra', 'Dharma', 'Elang', 'Gita', 'Harun', 'Rin', 'Jaka'];
 
@@ -69,6 +70,9 @@ const CharacterCreation: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Inisialisasi audio pada interaksi pengguna pertama untuk memastikan izin browser
+        soundService.initialize();
 
         // 1. Tentukan pilihan final (pilihan pengguna atau acak)
         const finalName = name.trim() || randomNames[Math.floor(Math.random() * randomNames.length)];
@@ -115,6 +119,9 @@ const CharacterCreation: React.FC = () => {
         }));
         
         dispatch(startGame());
+
+        // Mulai musik latar setelah game dimulai
+        soundService.playBgm('explore');
 
         // Kirim thunk async untuk menghasilkan bab pertama
         dispatch(generateAndStartChapter({

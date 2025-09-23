@@ -2,18 +2,25 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store/store';
 import { calculateXpForNextLevel } from '../../core/gameRules';
+import { codex } from '../../core/codex';
 
 const StatusHUD: React.FC = () => {
-    const player = useSelector((state: RootState) => state.game.player);
+    const { player } = useSelector((state: RootState) => state.game);
     const hpPercentage = player.maxHp > 0 ? (player.hp / player.maxHp) * 100 : 0;
     const nextLevelXp = calculateXpForNextLevel(player.level);
     const xpPercentage = nextLevelXp > 0 ? (player.xp / nextLevelXp) * 100 : 0;
+    const activeCompanion = player.activeCompanion ? codex.companions[player.activeCompanion] : null;
 
     return (
         <div className="status-hud">
             {player.portraitUrl && (
                 <div className="player-portrait">
                     <img src={player.portraitUrl} alt="Player Portrait" />
+                </div>
+            )}
+            {activeCompanion && (
+                <div className="companion-portrait" title={`Companion Aktif: ${activeCompanion.name}`}>
+                    <img src={activeCompanion.portraitUrl} alt={activeCompanion.name} />
                 </div>
             )}
             <div className="player-info">

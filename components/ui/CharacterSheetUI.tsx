@@ -3,8 +3,8 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 import { codex } from '../../core/codex';
-import { AttributeId } from '../../types';
-import { increaseAttribute } from '../../store/gameSlice';
+import { AttributeId, CompanionId } from '../../types';
+import { increaseAttribute, setActiveCompanion } from '../../store/gameSlice';
 
 const CharacterSheetUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
     const player = useSelector((state: RootState) => state.game.player);
@@ -19,6 +19,14 @@ const CharacterSheetUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
         if (player.unspentAttributePoints > 0) {
             dispatch(increaseAttribute(attribute));
         }
+    };
+    
+    const handleSetActiveCompanion = (companionId: CompanionId) => {
+        dispatch(setActiveCompanion(companionId));
+    };
+
+    const handleDismissCompanion = () => {
+        dispatch(setActiveCompanion(null));
     };
 
     return (
@@ -36,7 +44,7 @@ const CharacterSheetUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
                     </div>
                 </div>
 
-                <div className="sheet-section" style={{ marginBottom: '1.5rem' }}>
+                <div className="sheet-section">
                     <h4>Atribut</h4>
                     {player.unspentAttributePoints > 0 && 
                         <p className="points-available" style={{ color: 'var(--accent-color)'}}>
@@ -60,6 +68,38 @@ const CharacterSheetUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
                             </li>
                         ))}
                     </ul>
+                </div>
+
+                <div className="sheet-section">
+                    <h4>Companions</h4>
+                    {player.activeCompanion && (
+                        <button onClick={handleDismissCompanion} style={{marginBottom: '1rem', width: '100%'}}>
+                           Istirahatkan Companion
+                        </button>
+                    )}
+                    {player.companions.length > 0 ? (
+                        <div className="companion-list">
+                            {player.companions.map(companionId => {
+                                const companion = codex.companions[companionId];
+                                const isActive = player.activeCompanion === companionId;
+                                return (
+                                    <div key={companion.id} className={`companion-card ${isActive ? 'active' : ''}`}>
+                                        <img src={companion.portraitUrl} alt={companion.name} />
+                                        <strong>{companion.name}</strong>
+                                        <button 
+                                            onClick={() => handleSetActiveCompanion(companion.id)}
+                                            disabled={isActive}
+                                            className={isActive ? 'active-btn' : ''}
+                                        >
+                                            {isActive ? 'Aktif' : 'Aktifkan'}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <p>Kamu bepergian sendirian.</p>
+                    )}
                 </div>
 
                  <div className="sheet-section">

@@ -41,19 +41,16 @@ const NarrativePanel: React.FC = () => {
         if (isLoading && !currentChapter) return <p>Membangun alur cerita bab baru...</p>;
         if (error) return <p style={{color: 'var(--color-danger)'}}>Error: {error}</p>;
 
-        if (currentRandomEvent) {
+        if (currentRandomEvent && activeNpc) {
              return (
-                <div>
-                    {activeNpc && (
-                        <div className="npc-encounter">
-                            <img src={activeNpc.portraitUrl} alt={activeNpc.name} />
-                            <div>
-                                <small>Bertemu:</small>
-                                <h4>{activeNpc.name}</h4>
-                            </div>
-                        </div>
-                    )}
-                    <p>{displayedText}</p>
+                <div className="visual-novel-dialog">
+                    <div className="vn-portrait">
+                        <img src={activeNpc.portraitUrl} alt={activeNpc.name} />
+                    </div>
+                    <div className="vn-text-box">
+                        <h4>{activeNpc.name}</h4>
+                        <p>{displayedText}</p>
+                    </div>
                 </div>
             );
         }
@@ -62,7 +59,7 @@ const NarrativePanel: React.FC = () => {
             return (
                 <div className="combat-log-container">
                     {combatLog.map(log => (
-                        <p key={log.id} className={`combat-log-entry ${log.turn}-turn`}>
+                        <p key={log.id} className={`combat-log-entry ${log.source}-source`}>
                             {log.message}
                         </p>
                     ))}
@@ -74,7 +71,7 @@ const NarrativePanel: React.FC = () => {
              return (
                 <div className="combat-log-container">
                     {combatLog.map(log => (
-                        <p key={log.id} className={`combat-log-entry ${log.turn}-turn`}>
+                        <p key={log.id} className={`combat-log-entry ${log.source}-source`}>
                             {log.message}
                         </p>
                     ))}

@@ -63,8 +63,8 @@ const ChoicePanel: React.FC = () => {
     const handleChapterChoiceClick = (choice: ChapterNodeChoice) => {
         dispatch(setLoading(true));
         
-        // Pilihan chapter memicu transisi layar pemuatan yang lebih panjang
         setTimeout(() => {
+             // Dispatch the custom thunk that handles the choice and subsequent logic
              dispatch(makeChoice(choice));
         }, 500);
 

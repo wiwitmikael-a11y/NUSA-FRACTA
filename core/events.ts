@@ -337,5 +337,47 @@ export const randomEvents: RandomEvent[] = [
                 effects: [{ type: 'START_COMBAT', key: 'anomali_jamur', message: 'Anomali Jamur menyebarkan spora dan menyerang!' }]
             }
         ]
+    },
+    // NEW GRINDING EVENTS
+    {
+        id: 'hadangan_preman_lemah',
+        type: 'threat',
+        npc: { name: 'Sistem', portraitKey: '' },
+        narrative: 'Seorang preman kurus dengan pipa besi di tangan mencoba memblokir jalanmu, terlihat lebih gugup daripada mengancam. "Serahkan apa yang kau punya," katanya, suaranya sedikit bergetar.',
+        choices: [
+            {
+                text: 'Lawan preman itu.',
+                effects: [{ type: 'START_COMBAT', key: 'preman_kumuh', message: 'Preman kumuh itu memberanikan diri dan menyerang!' }]
+            }
+        ]
+    },
+    {
+        id: 'sergapan_anjing_liar',
+        type: 'threat',
+        npc: { name: 'Sistem', portraitKey: '' },
+        narrative: 'Geraman rendah terdengar dari tumpukan sampah di dekatmu. Seekor anjing liar kurus dengan mata lapar melompat keluar, mengincar ranselmu.',
+        choices: [
+            {
+                text: 'Hadapi anjing itu.',
+                effects: [{ type: 'START_COMBAT', key: 'anjing_liar', message: 'Anjing liar itu menerkam!' }]
+            }
+        ]
+    },
+    {
+        id: 'sarang_terganggu',
+        type: 'discovery',
+        npc: { name: 'Sistem', portraitKey: '' },
+        narrative: 'Kamu tidak sengaja menendang tumpukan rongsokan, dan suara mendesis marah terdengar dari dalamnya. Beberapa makhluk kecil dan aneh merayap keluar.',
+        choices: [
+            {
+                text: 'Hancurkan mereka!',
+                effects: [{ type: 'START_COMBAT', key: 'anomali_tengkorak', message: 'Anomali kecil itu menyerang serentak!' }]
+            },
+            {
+                text: '[Ketangkasan 6+] Mundur perlahan.',
+                condition: [{ type: 'ATTRIBUTE', key: 'ketangkasan', value: 6 }],
+                effects: [{ type: 'NOTHING', message: 'Kamu berhasil mundur tanpa memprovokasi mereka lebih jauh.' }]
+            }
+        ]
     }
 ];
