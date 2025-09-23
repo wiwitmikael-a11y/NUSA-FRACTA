@@ -61,6 +61,32 @@ export const codex: Codex = {
         value: 120
     },
 
+    // SENJATA RANGED
+    'senapan_angin': {
+        name: 'Senapan Angin Rakitan',
+        description: 'Dibuat dari pipa dan pegas, senapan ini melontarkan proyektil logam kecil. Tidak terlalu kuat, tapi lebih baik daripada melempar batu.',
+        type: 'weapon',
+        equipmentSlot: 'rangedWeapon',
+        effects: [{ type: 'SKILL_BONUS', key: 'flat_damage_bonus', value: 5 }],
+        value: 60
+    },
+    'pistol_rakitan': {
+        name: 'Pistol Rakitan',
+        description: 'Senjata api improvisasi yang tidak bisa diandalkan namun mematikan di tangan yang tepat. Amunisi adalah barang langka.',
+        type: 'weapon',
+        equipmentSlot: 'rangedWeapon',
+        effects: [{ type: 'SKILL_BONUS', key: 'flat_damage_bonus', value: 7 }],
+        value: 90
+    },
+    'busur_rakitan': {
+        name: 'Busur Rakitan',
+        description: 'Busur yang dibuat dari suspensi motor dan kabel baja. Senyap dan mematikan, membutuhkan ketangkasan untuk digunakan secara efektif.',
+        type: 'weapon',
+        equipmentSlot: 'rangedWeapon',
+        effects: [{ type: 'SKILL_BONUS', key: 'flat_damage_bonus', value: 9 }],
+        value: 110
+    },
+
     // ARMOR
     'jaket_kulit_usang': {
       name: 'Jaket Kulit Usang',

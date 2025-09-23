@@ -11,7 +11,7 @@ export type QuestId = string;
 export type NodeId = string;
 export type ChapterId = string;
 export type TimeOfDay = 'pagi' | 'siang' | 'sore' | 'malam';
-export type EquipmentSlot = 'meleeWeapon' | 'armor';
+export type EquipmentSlot = 'meleeWeapon' | 'rangedWeapon' | 'armor';
 export type CompanionId = 'ayra' | 'davina' | 'raizen';
 export type CompanionBonusType = 'SKILL_CHECK' | 'COMBAT_ASSIST';
 

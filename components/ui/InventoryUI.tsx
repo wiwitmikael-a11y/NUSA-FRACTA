@@ -50,7 +50,8 @@ const InventoryUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
                 
                 <h2>Terpasang</h2>
                 <ul className="inventory-list" style={{ marginBottom: '2rem' }}>
-                    {renderEquippedItem('meleeWeapon', 'Senjata')}
+                    {renderEquippedItem('meleeWeapon', 'Senjata Melee')}
+                    {renderEquippedItem('rangedWeapon', 'Senjata Ranged')}
                     {renderEquippedItem('armor', 'Armor')}
                 </ul>
                 

@@ -30,15 +30,22 @@ export const calculatePlayerDamage = (player: Player): { damage: number, isCriti
     let totalDamage = Math.max(1, baseDamage + strengthBonus);
     let isCritical = false;
 
-    // Tambahkan bonus dari senjata yang terpasang
-    const equippedWeaponId = player.equippedItems.meleeWeapon;
-    if (equippedWeaponId) {
-        const weapon = codex.items[equippedWeaponId];
-        const weaponDamageEffect = weapon?.effects?.find(e => e.key === 'flat_damage_bonus');
-        if (weaponDamageEffect) {
-            totalDamage += weaponDamageEffect.value;
-        }
+    // Tambahkan bonus dari senjata yang terpasang (pilih yang terkuat antara melee dan ranged)
+    let weaponDamageBonus = 0;
+    const equippedMeleeId = player.equippedItems.meleeWeapon;
+    if (equippedMeleeId) {
+        const weapon = codex.items[equippedMeleeId];
+        const effect = weapon?.effects?.find(e => e.key === 'flat_damage_bonus');
+        if (effect) weaponDamageBonus = Math.max(weaponDamageBonus, effect.value);
     }
+    const equippedRangedId = player.equippedItems.rangedWeapon;
+    if (equippedRangedId) {
+        const weapon = codex.items[equippedRangedId];
+        const effect = weapon?.effects?.find(e => e.key === 'flat_damage_bonus');
+        if (effect) weaponDamageBonus = Math.max(weaponDamageBonus, effect.value);
+    }
+    totalDamage += weaponDamageBonus;
+
 
     // Periksa bonus dari keahlian (biasanya persentase)
     if (player.skillId) {

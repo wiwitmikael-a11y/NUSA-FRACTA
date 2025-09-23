@@ -74,9 +74,9 @@ const applyEffects = (state: GameState, effects: (ChoiceEffect | RandomEventChoi
         switch(effect.type) {
             case 'GAIN_ITEM':
                 if (effect.key && typeof effect.value === 'number') {
-                    const existingItem = state.player.inventory.find(i => i.itemId === effect.key);
-                    if (existingItem) {
-                        existingItem.quantity += effect.value;
+                    const itemIndex = state.player.inventory.findIndex(i => i.itemId === effect.key);
+                    if (itemIndex > -1) {
+                        state.player.inventory[itemIndex].quantity += effect.value;
                     } else {
                         state.player.inventory.push({ itemId: effect.key as ItemId, quantity: effect.value });
                     }
@@ -85,11 +85,11 @@ const applyEffects = (state: GameState, effects: (ChoiceEffect | RandomEventChoi
                 break;
             case 'LOSE_ITEM':
                 if (effect.key && typeof effect.value === 'number') {
-                    const itemInInv = state.player.inventory.find(i => i.itemId === effect.key);
-                    if (itemInInv) {
-                        itemInInv.quantity -= effect.value;
-                        if (itemInInv.quantity <= 0) {
-                            state.player.inventory = state.player.inventory.filter(i => i.itemId !== effect.key);
+                    const itemIndex = state.player.inventory.findIndex(i => i.itemId === effect.key);
+                    if (itemIndex > -1) {
+                        state.player.inventory[itemIndex].quantity -= effect.value;
+                        if (state.player.inventory[itemIndex].quantity <= 0) {
+                            state.player.inventory.splice(itemIndex, 1);
                         }
                         state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'info' });
                     }
@@ -267,25 +267,73 @@ const gameSlice = createSlice({
                 skillId,
                 attributes: attributes,
                 portraitUrl: background?.portraitUrl || null,
+                inventory: [],
+                equippedItems: {},
             };
-
-            const starterInventory: InventoryItem[] = [];
+            
             state.player.skrip = 75;
 
+            // Atur perlengkapan awal berdasarkan balancing baru
             switch (backgroundId) {
-                case 'pemulung': starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'kain_bekas', quantity: 5 }, { itemId: 'komponen_elektronik', quantity: 3 }, { itemId: 'selotip', quantity: 1 }); break;
-                case 'mantan_tentara': starterInventory.push({ itemId: 'golok', quantity: 1 }, { itemId: 'rompi_improvisasi', quantity: 1 }, { itemId: 'perban', quantity: 3 }, { itemId: 'stimulan', quantity: 1 }); break;
-                case 'teknisi_jalanan': starterInventory.push({ itemId: 'kunci_inggris', quantity: 1 }, { itemId: 'komponen_elektronik', quantity: 5 }, { itemId: 'selotip', quantity: 2 }, { itemId: 'baterai_bekas', quantity: 3 }); break;
-                case 'negosiator_pasar_gelap': starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'air_kemasan', quantity: 2 }, { itemId: 'kopi_instan', quantity: 3 }); state.player.skrip += 100; break;
-                case 'kurir_cepat': starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'air_kemasan', quantity: 3 }, { itemId: 'keripik_basi', quantity: 2 }, { itemId: 'kopi_instan', quantity: 2 }); break;
-                case 'pustakawan_kiamat': starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'data_chip', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'kopi_instan', quantity: 2 }); break;
-                case 'seniman_grafiti': starterInventory.push({ itemId: 'pisau_dapur', quantity: 1 }, { itemId: 'keripik_basi', quantity: 3 }, { itemId: 'selotip', quantity: 2 }, { itemId: 'air_kemasan', quantity: 1 }); break;
-                case 'pengawal_pribadi': starterInventory.push({ itemId: 'bat_baseball', quantity: 1 }, { itemId: 'jaket_kulit_usang', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'stimulan', quantity: 1 }); break;
-                case 'petani_hidroponik': starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'air_kemasan', quantity: 3 }, { itemId: 'makanan_kaleng', quantity: 2 }, { itemId: 'perban', quantity: 1 }); break;
-                case 'kultis_puing': starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'artefak_aneh', quantity: 1 }, { itemId: 'keripik_basi', quantity: 2 }, { itemId: 'kain_bekas', quantity: 2 }); break;
-                default: starterInventory.push({ itemId: 'pipa_besi', quantity: 1 }, { itemId: 'perban', quantity: 2 }, { itemId: 'keripik_basi', quantity: 1 }); break;
+                case 'mantan_tentara': // +2 Str -> Strong melee, weak armor
+                    state.player.equippedItems.meleeWeapon = 'golok';
+                    state.player.equippedItems.armor = 'jaket_kulit_usang';
+                    state.player.inventory.push({ itemId: 'perban', quantity: 3 }, { itemId: 'stimulan', quantity: 1 });
+                    break;
+                case 'kurir_cepat': // +2 Dex -> Strong ranged, weak armor
+                    state.player.equippedItems.rangedWeapon = 'busur_rakitan';
+                    state.player.equippedItems.armor = 'jaket_kulit_usang';
+                    state.player.inventory.push({ itemId: 'air_kemasan', quantity: 3 }, { itemId: 'kopi_instan', quantity: 2 });
+                    break;
+                case 'teknisi_jalanan': // +2 Int -> Medium ranged, medium armor
+                    state.player.equippedItems.rangedWeapon = 'pistol_rakitan';
+                    state.player.equippedItems.armor = 'rompi_improvisasi';
+                    state.player.inventory.push({ itemId: 'komponen_elektronik', quantity: 5 }, { itemId: 'baterai_bekas', quantity: 3 });
+                    break;
+                case 'negosiator_pasar_gelap': // +2 Cha -> Weak melee, strong armor
+                    state.player.equippedItems.meleeWeapon = 'pisau_dapur';
+                    state.player.equippedItems.armor = 'rompi_balistik_rusak';
+                    state.player.inventory.push({ itemId: 'air_kemasan', quantity: 2 }, { itemId: 'kopi_instan', quantity: 3 });
+                    state.player.skrip += 100;
+                    break;
+                
+                // Mixed backgrounds
+                case 'pengawal_pribadi': // +1 Str, +1 Dex -> Strong melee, weak armor
+                    state.player.equippedItems.meleeWeapon = 'bat_baseball';
+                    state.player.equippedItems.armor = 'jaket_kulit_usang';
+                    state.player.inventory.push({ itemId: 'perban', quantity: 2 }, { itemId: 'stimulan', quantity: 1 });
+                    break;
+                case 'petani_hidroponik': // +1 Int, +1 Str -> Balanced melee & armor
+                    state.player.equippedItems.meleeWeapon = 'kunci_inggris';
+                    state.player.equippedItems.armor = 'rompi_improvisasi';
+                    state.player.inventory.push({ itemId: 'air_kemasan', quantity: 3 }, { itemId: 'makanan_kaleng', quantity: 2 });
+                    break;
+                case 'pemulung': // +1 Int, +1 Dex -> Balanced ranged & armor
+                    state.player.equippedItems.rangedWeapon = 'senapan_angin';
+                    state.player.equippedItems.armor = 'rompi_improvisasi';
+                    state.player.inventory.push({ itemId: 'kain_bekas', quantity: 5 }, { itemId: 'komponen_elektronik', quantity: 3 });
+                    break;
+                case 'seniman_grafiti': // +1 Dex, +1 Cha -> Weak ranged, medium armor
+                    state.player.equippedItems.rangedWeapon = 'senapan_angin';
+                    state.player.equippedItems.armor = 'rompi_improvisasi';
+                    state.player.inventory.push({ itemId: 'keripik_basi', quantity: 3 }, { itemId: 'selotip', quantity: 2 });
+                    break;
+                case 'pustakawan_kiamat': // +1 Int, +1 Cha -> Weak melee, medium armor
+                    state.player.equippedItems.meleeWeapon = 'kunci_inggris';
+                    state.player.equippedItems.armor = 'rompi_improvisasi';
+                    state.player.inventory.push({ itemId: 'data_chip', quantity: 1 }, { itemId: 'perban', quantity: 2 });
+                    break;
+                case 'kultis_puing': // +1 Cha, +1 Int -> Weak melee, medium armor
+                    state.player.equippedItems.meleeWeapon = 'pisau_dapur';
+                    state.player.equippedItems.armor = 'rompi_improvisasi';
+                    state.player.inventory.push({ itemId: 'artefak_aneh', quantity: 1 }, { itemId: 'kain_bekas', quantity: 2 });
+                    break;
+
+                default: // Fallback
+                    state.player.equippedItems.meleeWeapon = 'pipa_besi';
+                    state.player.inventory.push({ itemId: 'perban', quantity: 2 }, { itemId: 'keripik_basi', quantity: 1 });
+                    break;
             }
-            state.player.inventory = starterInventory;
 
             if (skill) {
                 const hpBonusEffect = skill.effects.find(e => e.type === 'SKILL_BONUS' && e.key === 'base_hp_bonus');
@@ -316,9 +364,10 @@ const gameSlice = createSlice({
         },
         useItem: (state, action: PayloadAction<ItemId>) => {
             const itemId = action.payload;
-            const itemInInventory = state.player.inventory.find(i => i.itemId === itemId);
+            const itemIndex = state.player.inventory.findIndex(i => i.itemId === itemId);
             const itemDetails = codex.items[itemId];
-            if (itemInInventory && itemDetails?.type === 'consumable' && itemDetails.effects) {
+
+            if (itemIndex > -1 && itemDetails?.type === 'consumable' && itemDetails.effects) {
                 itemDetails.effects.forEach(effect => {
                     if (effect.key === 'healing_effectiveness') {
                         const healAmount = effect.value;
@@ -326,9 +375,10 @@ const gameSlice = createSlice({
                         state.eventLog.unshift({ id: `elog-${Date.now()}`, message: `Kamu menggunakan ${itemDetails.name}, memulihkan ${healAmount} HP.`, type: 'reward'});
                     }
                 });
-                itemInInventory.quantity--;
-                if (itemInInventory.quantity <= 0) {
-                    state.player.inventory = state.player.inventory.filter(i => i.itemId !== itemId);
+
+                state.player.inventory[itemIndex].quantity--;
+                if (state.player.inventory[itemIndex].quantity <= 0) {
+                    state.player.inventory.splice(itemIndex, 1);
                 }
             }
         },
@@ -337,11 +387,17 @@ const gameSlice = createSlice({
             if (itemDetails?.equipmentSlot) {
                 const { equipmentSlot } = itemDetails;
                 const currentItem = state.player.equippedItems[equipmentSlot];
-                if (currentItem) { // Unequip current item first
-                    const itemInInv = state.player.inventory.find(i => i.itemId === currentItem);
-                    if (itemInInv) itemInInv.quantity++;
-                    else state.player.inventory.push({ itemId: currentItem, quantity: 1 });
+                
+                // Unequip current item if one exists
+                if (currentItem) {
+                    const itemIndex = state.player.inventory.findIndex(i => i.itemId === currentItem);
+                    if (itemIndex > -1) {
+                        state.player.inventory[itemIndex].quantity++;
+                    } else {
+                        state.player.inventory.push({ itemId: currentItem, quantity: 1 });
+                    }
                 }
+                
                 state.player.equippedItems[equipmentSlot] = action.payload;
             }
         },
@@ -350,23 +406,38 @@ const gameSlice = createSlice({
             const itemId = state.player.equippedItems[slot];
             if (itemId) {
                 delete state.player.equippedItems[slot];
-                const itemInInv = state.player.inventory.find(i => i.itemId === itemId);
-                if (itemInInv) itemInInv.quantity++;
-                else state.player.inventory.push({ itemId, quantity: 1 });
+                const itemIndex = state.player.inventory.findIndex(i => i.itemId === itemId);
+                if (itemIndex > -1) {
+                    state.player.inventory[itemIndex].quantity++;
+                } else {
+                    state.player.inventory.push({ itemId, quantity: 1 });
+                }
             }
         },
         craftItem: (state, action: PayloadAction<Recipe>) => {
             const { recipe } = { recipe: action.payload };
-            const canCraft = recipe.ingredients.every(ing => state.player.inventory.find(i => i.itemId === ing.itemId && i.quantity >= ing.quantity));
+            const canCraft = recipe.ingredients.every(ing => 
+                state.player.inventory.find(i => i.itemId === ing.itemId && i.quantity >= ing.quantity)
+            );
+
             if (canCraft) {
+                // Consume ingredients
                 recipe.ingredients.forEach(ing => {
-                    const item = state.player.inventory.find(i => i.itemId === ing.itemId)!;
-                    item.quantity -= ing.quantity;
+                    const itemIndex = state.player.inventory.findIndex(i => i.itemId === ing.itemId)!;
+                    state.player.inventory[itemIndex].quantity -= ing.quantity;
                 });
+                
+                // Add crafted item
+                const resultItemIndex = state.player.inventory.findIndex(i => i.itemId === recipe.result.itemId);
+                if (resultItemIndex > -1) {
+                    state.player.inventory[resultItemIndex].quantity += recipe.result.quantity;
+                } else {
+                    state.player.inventory.push({ ...recipe.result });
+                }
+
+                // Clean up inventory from zero-quantity items
                 state.player.inventory = state.player.inventory.filter(i => i.quantity > 0);
-                const resultItem = state.player.inventory.find(i => i.itemId === recipe.result.itemId);
-                if (resultItem) resultItem.quantity += recipe.result.quantity;
-                else state.player.inventory.push({ ...recipe.result });
+
                 state.eventLog.unshift({ id: `elog-${Date.now()}`, message: `Berhasil membuat ${codex.items[recipe.result.itemId].name}.`, type: 'reward'});
             }
         },
@@ -390,14 +461,46 @@ const gameSlice = createSlice({
             const enemy = codex.enemies[state.currentEnemyId];
             const playerDefense = calculatePlayerDefense(state.player);
 
+            // --- Player attacks ---
             const { damage: playerDamage, isCritical } = calculatePlayerDamage(state.player);
             const finalPlayerDamage = Math.max(1, playerDamage - enemy.defense);
             state.enemyCurrentHp -= finalPlayerDamage;
             state.combatLog.unshift({ id: `clog-${Date.now()}`, message: `${state.player.name} ${isCritical ? 'melancarkan serangan KRITIS dan' : ''} memberikan ${finalPlayerDamage} kerusakan.`, source: 'player', type: isCritical ? 'critical' : 'damage' });
 
-            const checkVictory = () => {
+            // --- Check for victory after player attack ---
+            if (state.enemyCurrentHp <= 0) {
+                const { xpValue, skripDrop, lootTable } = enemy;
+                state.player.xp += xpValue;
+                const skripGain = Math.floor(Math.random() * (skripDrop[1] - skripDrop[0] + 1)) + skripDrop[0];
+                state.player.skrip += skripGain;
+                state.eventLog.unshift({ id: `elog-${Date.now()}`, message: `Kamu mengalahkan ${enemy.name}! Mendapatkan ${xpValue} XP & ${skripGain} Skrip.`, type: 'reward' });
+                lootTable.forEach(loot => {
+                    if (Math.random() < loot.chance) {
+                        const quantity = Math.floor(Math.random() * (loot.quantity[1] - loot.quantity[0] + 1)) + loot.quantity[0];
+                        const itemIndex = state.player.inventory.findIndex(i => i.itemId === loot.itemId);
+                        if (itemIndex > -1) {
+                            state.player.inventory[itemIndex].quantity += quantity;
+                        } else {
+                            state.player.inventory.push({ itemId: loot.itemId, quantity });
+                        }
+                        state.eventLog.unshift({ id: `elog-${Date.now() + 1}`, message: `Mendapatkan ${quantity} ${codex.items[loot.itemId].name}.`, type: 'reward' });
+                    }
+                });
+                state.player = checkLevelUp(state.player);
+                state.isInCombat = false;
+                return; // End combat turn
+            }
+            
+            // --- Companion attacks ---
+            if (state.player.activeCompanion === 'davina') {
+                const companion = codex.companions.davina;
+                const companionDamage = Math.max(1, companion.bonusValue - enemy.defense);
+                state.enemyCurrentHp -= companionDamage;
+                state.combatLog.unshift({ id: `clog-${Date.now() + 0.5}`, message: `${companion.name} membantu, memberikan ${companionDamage} kerusakan.`, source: 'companion', type: 'damage' });
+                
+                // --- Check for victory after companion attack ---
                 if (state.enemyCurrentHp <= 0) {
-                    const { xpValue, skripDrop, lootTable } = enemy;
+                     const { xpValue, skripDrop, lootTable } = enemy;
                     state.player.xp += xpValue;
                     const skripGain = Math.floor(Math.random() * (skripDrop[1] - skripDrop[0] + 1)) + skripDrop[0];
                     state.player.skrip += skripGain;
@@ -405,29 +508,22 @@ const gameSlice = createSlice({
                     lootTable.forEach(loot => {
                         if (Math.random() < loot.chance) {
                             const quantity = Math.floor(Math.random() * (loot.quantity[1] - loot.quantity[0] + 1)) + loot.quantity[0];
-                            const itemInInv = state.player.inventory.find(i => i.itemId === loot.itemId);
-                            if (itemInInv) itemInInv.quantity += quantity;
-                            else state.player.inventory.push({ itemId: loot.itemId, quantity });
+                            const itemIndex = state.player.inventory.findIndex(i => i.itemId === loot.itemId);
+                            if (itemIndex > -1) {
+                                state.player.inventory[itemIndex].quantity += quantity;
+                            } else {
+                                state.player.inventory.push({ itemId: loot.itemId, quantity });
+                            }
                             state.eventLog.unshift({ id: `elog-${Date.now() + 1}`, message: `Mendapatkan ${quantity} ${codex.items[loot.itemId].name}.`, type: 'reward' });
                         }
                     });
                     state.player = checkLevelUp(state.player);
                     state.isInCombat = false;
-                    return true;
+                    return; // End combat turn
                 }
-                return false;
-            };
-
-            if (checkVictory()) return;
-            
-            if (state.player.activeCompanion === 'davina') {
-                const companion = codex.companions.davina;
-                const companionDamage = Math.max(1, companion.bonusValue - enemy.defense);
-                state.enemyCurrentHp -= companionDamage;
-                state.combatLog.unshift({ id: `clog-${Date.now() + 0.5}`, message: `${companion.name} membantu, memberikan ${companionDamage} kerusakan.`, source: 'companion', type: 'damage' });
-                if (checkVictory()) return;
             }
 
+            // --- Enemy attacks ---
             const dodgeChance = (state.player.attributes.ketangkasan - 5) * 2 + (codex.skills[state.player.skillId!]?.effects.find(e => e.key === 'dodge_chance')?.value || 0);
             if (Math.random() * 100 < dodgeChance) {
                  state.combatLog.unshift({ id: `clog-${Date.now() + 1}`, message: "Kamu berhasil menghindar!", source: 'system', type: 'dodge' });
