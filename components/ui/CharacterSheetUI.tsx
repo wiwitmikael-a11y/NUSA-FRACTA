@@ -36,7 +36,7 @@ const CharacterSheetUI: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
                 <button onClick={onClose} className="close-button">X</button>
                 
                 <div className="sheet-header" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    {player.portraitUrl && <img src={player.portraitUrl} alt="Player Portrait" style={{ width: '100px', height: '100px', objectFit: 'cover', border: '2px solid var(--accent-color)' }} />}
+                    {player.portraitUrl && <img src={player.portraitUrl} alt="Player Portrait" className="animated-portrait" style={{ width: '100px', height: '100px', objectFit: 'cover', border: '2px solid var(--accent-color)' }} />}
                     <div className="header-info">
                         <h3>{player.name}</h3>
                         <p>Level {player.level}</p>

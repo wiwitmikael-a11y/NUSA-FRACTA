@@ -16,16 +16,18 @@ class SoundService {
     private isFading = false;
     private bgmVolume = 0.4;
     private sfxVolume = 0.7;
+    private sfxCooldowns: Map<SfxKey, number> = new Map();
+    private readonly SFX_COOLDOWN_MS = 150; // Cooldown 150ms per sound type
 
     constructor() {
-        // Inisialisasi ditunda hingga pemanggilan initialize()
+        // Initialization is deferred to the initialize() call
     }
     
-    // Dipanggil sekali saat aplikasi dimuat
+    // Called once on first user interaction
     initialize() {
         if (this.isInitialized || typeof window === 'undefined') return;
         
-        // Muat volume dari localStorage
+        // Load volume from localStorage
         const storedBgmVolume = localStorage.getItem(BGM_VOLUME_KEY);
         const storedSfxVolume = localStorage.getItem(SFX_VOLUME_KEY);
         if (storedBgmVolume) this.bgmVolume = parseFloat(storedBgmVolume);
@@ -33,7 +35,7 @@ class SoundService {
 
         this.bgmPlayer = document.getElementById('bgm-player') as HTMLAudioElement;
         if (!this.bgmPlayer) {
-            console.error('Elemen pemutar BGM tidak ditemukan!');
+            console.error('BGM player element not found!');
             return;
         }
         this.bgmPlayer.volume = this.bgmVolume;
@@ -66,13 +68,21 @@ class SoundService {
 
     playSfx(key: SfxKey) {
         if (!this.isInitialized) return;
+
+        const now = Date.now();
+        const lastPlayed = this.sfxCooldowns.get(key) || 0;
+        if (now - lastPlayed < this.SFX_COOLDOWN_MS) {
+            return; // Throttle the sound effect
+        }
+        this.sfxCooldowns.set(key, now);
+
         try {
             const audio = this.sfxPool[this.sfxPoolIndex];
             audio.src = soundManifest.sfx[key];
-            audio.play().catch(e => {});
+            audio.play().catch(e => { console.warn(`SFX play interrupted or failed for ${key}:`, e); });
             this.sfxPoolIndex = (this.sfxPoolIndex + 1) % this.sfxPool.length;
         } catch (e) {
-            console.error(`Error memutar kunci SFX "${key}":`, e);
+            console.error(`Error playing SFX key "${key}":`, e);
         }
     }
 
@@ -110,7 +120,10 @@ class SoundService {
                     player.src = soundManifest.bgm[key];
                     const playPromise = player.play();
                     if (playPromise !== undefined) {
-                        playPromise.then(_ => performFadeIn()).catch(error => this.isFading = false);
+                        playPromise.then(_ => performFadeIn()).catch(error => {
+                             console.warn(`BGM play promise rejected after fade for ${key}:`, error);
+                             this.isFading = false
+                        });
                     }
                 }
             }, 100);
@@ -121,7 +134,7 @@ class SoundService {
                 playPromise.then(_ => {
                      player.volume = targetVolume;
                 }).catch(error => {
-                    // Autoplay gagal, akan dicoba lagi saat interaksi pengguna
+                    console.warn(`BGM autoplay failed for ${key}. User interaction likely needed.`, error);
                 });
             }
         }

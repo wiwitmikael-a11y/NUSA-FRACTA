@@ -14,7 +14,7 @@ type AssetKey = keyof typeof assetManifest.backgrounds;
  * @returns The normalized location string.
  */
 export const normalizeLocationName = (location: string): string => {
-    return location.split(',')[0].trim();
+    return location.split(/, | \(bersama/)[0].trim();
 };
 
 
@@ -22,6 +22,7 @@ export const normalizeLocationName = (location: string): string => {
 const locationToAssetKey: { [key: string]: AssetKey } = {
     // Exact matches updated to new keys
     'Jalan Jenderal Sudirman': 'jalanRayaJembatan',
+    'Persimpangan Utama Sudirman': 'jalanRayaJembatan',
     'Jalan Tol Terbengkalai': 'jalanRayaJembatan',
     'Halte Bus TransJakarta': 'jalanRayaJembatan',
     'Jalan Layang Runtuh': 'jalanRayaJembatan',
@@ -54,12 +55,15 @@ const locationToAssetKey: { [key: string]: AssetKey } = {
     'Rel MRT Layang': 'relMrtKereta',
     'Tangga Darurat': 'stasiunMrt',
     'Kamp Pengungsian': 'tendaMarkasSurvivor',
+    "Zona Aman 'Harapan'": 'tendaMarkasSurvivor',
     'Pemukiman Sisa Kemanusiaan': 'tendaMarkasSurvivor',
     'Tenda Medis': 'tendaMarkasSurvivor',
     'Pasar Gelap': 'pasarSaudagar',
     'Bazar Puing': 'pasarSaudagar',
     'Markas Republik Merdeka': 'hqRepublik',
+    'Gerbang Zona Aman Sementara': 'hqRepublik',
     'Atap Gedung': 'relMrtKereta',
+    'Bengkel Ayra': 'stadionGudang',
 };
 
 // Peta kata kunci yang lebih komprehensif untuk pencocokan yang lebih luas.
@@ -71,6 +75,7 @@ const keywordToAssetKey: { [keyword: string]: AssetKey } = {
     
     // Jalan & Transportasi
     'jalan': 'jalanRayaJembatan',
+    'persimpangan': 'jalanRayaJembatan',
     'raya': 'jalanRayaJembatan',
     'jembatan': 'jalanRayaJembatan',
     'tol': 'jalanRayaJembatan',
@@ -121,6 +126,7 @@ const keywordToAssetKey: { [keyword: string]: AssetKey } = {
     'makan': 'warungMakan',
     'kafe': 'warungMakan',
     'dapur': 'warungMakan',
+    'bengkel': 'stadionGudang',
     'gang': 'gangSampah',
     'kumuh': 'gangSampah',
     'selokan': 'gangSampah',
@@ -130,10 +136,12 @@ const keywordToAssetKey: { [keyword: string]: AssetKey } = {
     'pemukiman': 'tendaMarkasSurvivor',
     'alun-alun': 'tendaMarkasSurvivor',
     'survivor': 'tendaMarkasSurvivor',
+    'zona aman': 'tendaMarkasSurvivor',
     'markas': 'hqRepublik',
     'republik': 'hqRepublik',
     'pos jaga': 'hqRepublik',
     'barak': 'hqRepublik',
+    'gerbang': 'hqRepublik',
     
     // Area Terbuka & Alam & Reruntuhan
     'monumen': 'monumenPuing',
@@ -193,8 +201,11 @@ export const getImageUrlForLocation = (location: string): string | null => {
 };
 
 export const getNpcImageUrl = (): string | null => {
-    const images = assetManifest.npcPortraits.generic;
-    const imageName = getRandomImage(images);
+    const allNpcImages = [
+        ...assetManifest.npcPortraits.generic,
+        ...assetManifest.npcPortraits.playerArchetypes,
+    ];
+    const imageName = getRandomImage(allNpcImages);
     if (imageName) {
         return `${PORTRAIT_BASE_URL}/${imageName}`;
     }

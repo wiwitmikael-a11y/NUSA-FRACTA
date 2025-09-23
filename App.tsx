@@ -24,7 +24,9 @@ import SettingsUI from './components/ui/SettingsUI';
 
 // Helper hook to get previous value
 function usePrevious<T>(value: T): T | undefined {
-  const ref = useRef<T>();
+  // FIX: Explicitly provide `undefined` as the initial value to `useRef`.
+  // Some TypeScript/ESLint configurations can misinterpret `useRef<T>()` as a call with 0 arguments when 1 is expected.
+  const ref = useRef<T | undefined>(undefined);
   useEffect(() => {
     ref.current = value;
   });
@@ -113,12 +115,12 @@ const App: React.FC = () => {
                         Akses Terminal
                     </button>
                     <div className={`command-menu-dropdown ${isCommandMenuOpen ? 'open' : ''}`}>
-                        <button onClick={() => { handleSaveGame(); setCommandMenuOpen(false); }}>Simpan</button>
+                        <button onClick={() => { setSheetOpen(true); setCommandMenuOpen(false); }}>Karakter</button>
+                        <button onClick={() => { setInventoryOpen(true); setCommandMenuOpen(false); }}>Inventaris</button>
                         <button onClick={() => { setMapOpen(true); setCommandMenuOpen(false); }}>Peta</button>
                         <button onClick={() => { setJournalOpen(true); setCommandMenuOpen(false); }}>Jurnal</button>
                         <button onClick={() => { setCraftingOpen(true); setCommandMenuOpen(false); }}>Racik</button>
-                        <button onClick={() => { setSheetOpen(true); setCommandMenuOpen(false); }}>Karakter</button>
-                        <button onClick={() => { setInventoryOpen(true); setCommandMenuOpen(false); }}>Inventaris</button>
+                        <button onClick={() => { handleSaveGame(); setCommandMenuOpen(false); }}>Simpan</button>
                         <button onClick={() => { setSettingsOpen(true); setCommandMenuOpen(false); }}>Pengaturan</button>
                     </div>
                 </nav>

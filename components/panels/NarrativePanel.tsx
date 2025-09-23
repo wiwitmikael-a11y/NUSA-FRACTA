@@ -45,7 +45,7 @@ const NarrativePanel: React.FC = () => {
              return (
                 <div className="visual-novel-dialog">
                     <div className="vn-portrait">
-                        <img src={activeNpc.portraitUrl} alt={activeNpc.name} />
+                        <img src={activeNpc.portraitUrl} alt={activeNpc.name} className="animated-portrait" />
                     </div>
                     <div className="vn-text-box">
                         <h4>{activeNpc.name}</h4>

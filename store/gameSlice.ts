@@ -7,7 +7,7 @@ import { randomEvents } from '../core/events';
 import { calculatePlayerDamage, calculateEnemyDamage, checkLevelUp, calculatePlayerDefense } from '../core/gameRules';
 import { getFactionImageUrl, getNpcImageUrl } from '../services/assetService';
 import type { RootState } from './store';
-import type { GameState, Chapter, ChapterNodeChoice, Player, Recipe, PlayerAttributes, ItemId, RandomEventChoice, RandomEvent, EquipmentSlot, AttributeId, EnemyId, ChoiceEffect, InventoryItem, CompanionId } from '../types';
+import type { GameState, Chapter, ChapterNodeChoice, Player, Recipe, PlayerAttributes, ItemId, RandomEventChoice, RandomEvent, EquipmentSlot, AttributeId, EnemyId, ChoiceEffect, InventoryItem, CompanionId, FactionId } from '../types';
 import { saveGame } from '../services/storageService';
 
 export const generateRandomEvent = createAsyncThunk<RandomEvent, void, { state: RootState }>(
@@ -22,50 +22,6 @@ export const generateRandomEvent = createAsyncThunk<RandomEvent, void, { state: 
         }
     }
 );
-
-// Helper function to trigger a random event
-const triggerRandomEvent = (state: GameState, dispatch: any): void => {
-    // 25% chance to trigger any event
-    if (Math.random() > 0.25) {
-        state.currentRandomEvent = null;
-        state.activeNpc = null;
-        return;
-    }
-
-    // Of that 25%, 50% chance to be a dynamic Gemini event
-    if (Math.random() < 0.50) {
-        dispatch(generateRandomEvent());
-        return; // Let the thunk handle setting the event
-    }
-    
-    const possibleEvents = randomEvents.filter(event => 
-        event.triggerCondition ? event.triggerCondition(state) : true
-    );
-
-    if (possibleEvents.length > 0) {
-        const event = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
-        state.currentRandomEvent = event;
-
-        if (event.npc.name !== 'Sistem') {
-             let portraitUrl: string | null = null;
-            if (event.npc.faction) {
-                portraitUrl = getFactionImageUrl(event.npc.faction as any);
-            } else {
-                portraitUrl = getNpcImageUrl();
-            }
-            
-            if (portraitUrl) {
-                state.activeNpc = { name: event.npc.name, portraitUrl };
-            } else {
-                 state.activeNpc = { name: event.npc.name, portraitUrl: '' }; // fallback
-            }
-        } else {
-            state.activeNpc = null;
-        }
-       
-        state.isNarrativeComplete = false; // Reset for event narrative
-    }
-};
 
 const applyEffects = (state: GameState, effects: (ChoiceEffect | RandomEventChoice['effects'][0])[]) => {
      effects.forEach(effect => {
@@ -149,7 +105,12 @@ const applyEffects = (state: GameState, effects: (ChoiceEffect | RandomEventChoi
                 break;
             case 'CHANGE_REPUTATION':
                 if (effect.key && typeof effect.value === 'number') {
-                    state.player.reputation[effect.key as any] += effect.value;
+                    const factionId = effect.key as FactionId;
+                    // FIX: Ensure faction reputation is initialized before changing it.
+                    if (state.player.reputation[factionId] === undefined) {
+                        state.player.reputation[factionId] = 0;
+                    }
+                    state.player.reputation[factionId] += effect.value;
                     state.eventLog.push({ id: `elog-${Date.now()}`, message, type: 'info' });
                 }
                 break;
@@ -240,20 +201,40 @@ const gameSlice = createSlice({
             }
         },
         resetGame: (state) => {
-            // Kembali ke state awal, tapi pertahankan beberapa hal
-            // seperti pengaturan, dll. jika disimpan di tempat lain.
-            // Untuk saat ini, reset total.
             Object.assign(state, initialGameState);
         },
         loadGame: (state, action: PayloadAction<GameState>) => {
             return {
                 ...action.payload,
-                isLoading: false, // Pastikan tidak terjebak dalam loading
-                gameStarted: true, // Pastikan game dianggap sudah berjalan
+                isLoading: false,
+                gameStarted: true,
             };
         },
         addInfoLog: (state, action: PayloadAction<string>) => {
             state.eventLog.push({ id: `elog-${Date.now()}`, message: action.payload, type: 'info' });
+        },
+        _setStaticRandomEvent: (state, action: PayloadAction<RandomEvent>) => {
+            const event = action.payload;
+            state.currentRandomEvent = event;
+
+            if (event.npc.name !== 'Sistem') {
+                let portraitUrl: string | null = null;
+                if (event.npc.faction) {
+                    portraitUrl = getFactionImageUrl(event.npc.faction as any);
+                } else {
+                    portraitUrl = getNpcImageUrl();
+                }
+                
+                if (portraitUrl) {
+                    state.activeNpc = { name: event.npc.name, portraitUrl };
+                } else {
+                     state.activeNpc = { name: event.npc.name, portraitUrl: '' }; // fallback
+                }
+            } else {
+                state.activeNpc = null;
+            }
+        
+            state.isNarrativeComplete = false; // Reset for event narrative
         },
         setPlayerCharacter: (state, action: PayloadAction<{ name: string; backgroundId: string; skillId: string; attributes: PlayerAttributes }>) => {
             const { name, backgroundId, skillId, attributes } = action.payload;
@@ -661,10 +642,28 @@ const gameSlice = createSlice({
 
 export const makeChoice = (choice: ChapterNodeChoice) => (dispatch: any, getState: () => RootState) => {
     dispatch(gameSlice.actions.internal_makeChoice(choice));
-    const state = getState().game;
     
-    if (state.currentNodeId && !state.currentChapter?.nodes.find(n => n.nodeId === state.currentNodeId)?.isChapterEnd) {
-         triggerRandomEvent(state, dispatch);
+    // Logic for triggering random events is now here, preventing mutation of readonly state
+    const postChoiceState = getState().game;
+    
+    if (postChoiceState.currentNodeId && !postChoiceState.isInCombat && !postChoiceState.currentChapter?.nodes.find(n => n.nodeId === postChoiceState.currentNodeId)?.isChapterEnd) {
+        // 25% chance to trigger any event
+        if (Math.random() <= 0.25) {
+            // Of that 25%, 50% chance to be a dynamic Gemini event
+            if (Math.random() < 0.50) {
+                dispatch(generateRandomEvent());
+            } else {
+                // Trigger a static event
+                const possibleEvents = randomEvents.filter(event => 
+                    event.triggerCondition ? event.triggerCondition(postChoiceState) : true
+                );
+
+                if (possibleEvents.length > 0) {
+                    const event = possibleEvents[Math.floor(Math.random() * possibleEvents.length)];
+                    dispatch(gameSlice.actions._setStaticRandomEvent(event));
+                }
+            }
+        }
     }
     
     saveGame('player1', getState().game);
@@ -687,7 +686,8 @@ export const {
     increaseAttribute, 
     equipItem, 
     unequipItem, 
-    resolveEventChoice
+    resolveEventChoice,
+    _setStaticRandomEvent
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

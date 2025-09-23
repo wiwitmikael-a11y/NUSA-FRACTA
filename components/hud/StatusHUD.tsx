@@ -15,12 +15,12 @@ const StatusHUD: React.FC = () => {
         <div className="status-hud">
             {player.portraitUrl && (
                 <div className="player-portrait">
-                    <img src={player.portraitUrl} alt="Player Portrait" />
+                    <img src={player.portraitUrl} alt="Player Portrait" className="animated-portrait" />
                 </div>
             )}
             {activeCompanion && (
                 <div className="companion-portrait" title={`Companion Aktif: ${activeCompanion.name}`}>
-                    <img src={activeCompanion.portraitUrl} alt={activeCompanion.name} />
+                    <img src={activeCompanion.portraitUrl} alt={activeCompanion.name} className="animated-portrait" />
                 </div>
             )}
             <div className="player-info">

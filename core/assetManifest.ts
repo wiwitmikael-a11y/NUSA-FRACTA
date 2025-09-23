@@ -106,6 +106,18 @@ export const assetManifest = {
       'npc_warga_07.png',
       'penyintas_biasa.png',
     ],
+    playerArchetypes: [
+        'player_pemulung.png',
+        'player_mantan_tentara.png',
+        'player_teknisi_jalanan.png',
+        'player_negosiator_pasar_gelap.png',
+        'player_kurir_cepat.png',
+        'player_pustakawan_kiamat.png',
+        'player_seniman_grafiti.png',
+        'player_pengawal_pribadi.png',
+        'player_petani_hidroponik.png',
+        'player_kultis_puing.png'
+    ],
     companions: [
         'companion_ayra.png',
         'companion_davina.png',

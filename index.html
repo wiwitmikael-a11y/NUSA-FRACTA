@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NUSA FRACTA</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="httpshttps://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
@@ -21,9 +21,9 @@
             --companion-color: #29b6f6; /* Light Blue for companions */
             --font-heading: 'Orbitron', sans-serif;
             --font-body: 'Roboto', sans-serif;
-            --terminal-bg-color: #1a2418;
-            --terminal-text-color: #33ff33;
-            --terminal-border-color: #338833;
+            --terminal-bg-color: #0D1F13;
+            --terminal-text-color: #4AEF85;
+            --terminal-border-color: #2A6B3A;
         }
 
         *, *::before, *::after {
@@ -109,13 +109,16 @@
             position: relative;
         }
         .command-menu-button {
+            font-family: var(--font-heading);
             padding: 0.5rem 1rem;
             border-color: var(--terminal-border-color);
             color: var(--terminal-text-color);
+            text-shadow: 0 0 5px var(--terminal-text-color);
         }
         .command-menu-button:hover {
             background-color: var(--terminal-text-color);
             color: var(--terminal-bg-color);
+            text-shadow: none;
         }
         .command-menu-dropdown {
             position: absolute;
@@ -134,7 +137,7 @@
             transition: opacity 0.2s ease-out, transform 0.2s ease-out;
             pointer-events: none;
             backdrop-filter: blur(5px);
-            background-color: rgba(26, 36, 24, 0.9);
+            background-color: rgba(13, 31, 19, 0.9);
         }
         .command-menu-dropdown.open {
             opacity: 1;
@@ -149,6 +152,7 @@
             color: var(--terminal-text-color);
             padding: 0.75rem 1.5rem;
             font-weight: normal;
+            font-family: var(--font-heading);
         }
         .command-menu-dropdown button:last-child {
             border-bottom: none;
@@ -612,6 +616,22 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Portrait Breathing Animation */
+        @keyframes breathing-animation {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+                transform-origin: center bottom;
+            }
+            50% {
+                transform: translateY(-4px) scale(1.03);
+                transform-origin: center bottom;
+            }
+        }
+        .animated-portrait {
+            will-change: transform;
+            animation: breathing-animation 5s ease-in-out infinite;
+        }
 
         /* User-Friendly Combat UI */
         .combat-view-container {
@@ -799,6 +819,7 @@
             z-index: 10000;
             overflow: hidden; /* Prevent scrollbars on overflow */
             transition: opacity 1s ease-in-out;
+            cursor: pointer;
         }
         .intro-container.fade-out { opacity: 0; }
         .intro-container video {

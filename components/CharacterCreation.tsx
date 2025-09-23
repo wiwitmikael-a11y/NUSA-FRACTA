@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store/store';
@@ -77,7 +78,6 @@ const CharacterCreation: React.FC = () => {
     const handleLoadGame = () => {
         const savedGame = loadGame('player1');
         if (savedGame) {
-            soundService.initialize(); // Ensure audio is ready
             dispatch(loadGameAction(savedGame));
             soundService.playBgm('explore');
         }
@@ -85,8 +85,6 @@ const CharacterCreation: React.FC = () => {
 
     const handleNewGame = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        soundService.initialize(); // Ensure audio is ready before starting BGM
         
         // 1. Tentukan pilihan final (pilihan pengguna atau acak)
         const finalName = name.trim() || randomNames[Math.floor(Math.random() * randomNames.length)];
@@ -202,7 +200,7 @@ const CharacterCreation: React.FC = () => {
                             <img 
                               src={codex.backgrounds[background].portraitUrl} 
                               alt="Potret Karakter" 
-                              className="pulsing-glow"
+                              className="animated-portrait"
                             />
                         </div>
                         <div className="stats-display">

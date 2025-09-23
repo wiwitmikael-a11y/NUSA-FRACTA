@@ -209,7 +209,7 @@ const ImagePanel: React.FC = () => {
                         {/* Player Info */}
                         <div className="combatant-info player-combatant">
                             <div className="combatant-visual">
-                                {player.portraitUrl && <img src={player.portraitUrl} alt="Player" className="combatant-portrait player" />}
+                                {player.portraitUrl && <img src={player.portraitUrl} alt="Player" className="combatant-portrait player animated-portrait" />}
                                 <div className="combatant-hp-bar-container">
                                     <div className="combatant-hp-bar player" style={{ width: `${playerHpPercentage}%` }}></div>
                                     <div className="combatant-hp-text">{player.hp} / {player.maxHp}</div>
@@ -221,7 +221,7 @@ const ImagePanel: React.FC = () => {
                         {/* Enemy Info */}
                         <div className="combatant-info enemy-combatant">
                             <div className="combatant-visual">
-                                {enemyImageUrl && <img src={enemyImageUrl} alt={enemy.name} className="combatant-portrait enemy" />}
+                                {enemyImageUrl && <img src={enemyImageUrl} alt={enemy.name} className="combatant-portrait enemy animated-portrait" />}
                                 <div className="combatant-hp-bar-container">
                                     <div className="combatant-hp-bar enemy" style={{ width: `${enemyHpPercentage}%` }}></div>
                                     <div className="combatant-hp-text">{enemyCurrentHp} / {enemy.hp}</div>

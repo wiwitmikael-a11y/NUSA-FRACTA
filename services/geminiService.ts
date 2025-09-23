@@ -13,6 +13,7 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
     const reputation = Object.entries(player.reputation).map(([faction, value]) => `${faction}: ${value}`).join(', ');
     const activeCompanionName = player.activeCompanion ? codex.companions[player.activeCompanion].name : 'Tidak ada';
     const recruitedCompanions = player.companions.map(id => codex.companions[id].name).join(', ') || 'Tidak ada';
+    const backgroundNames = Object.values(codex.backgrounds).map(b => b.name).join(', ');
 
 
     return `
@@ -42,6 +43,7 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
         - Faksi Utama: Sisa Kemanusiaan, Gerombolan Besi (raider kejam), Teknokrat (pencari teknologi), Geng Bangsat (anarkis), Pemburu Agraria (survivalis alam), Republik Merdeka (pembangun peradaban), Saudagar Jalanan (pedagang), Sekte Pustaka (penjaga pengetahuan).
         - NPC Penting (Calon Companion): Ayra (mekanik jenius), Davina (prajurit Republik Merdeka idealis), Raizen (pemburu misterius).
         - Musuh: Anjing Liar, Preman Kumuh, Perampok, Anomali Tengkorak, Anomali Jamur, Ratu Anomali (boss).
+        - Karakter & Arketipe: Selain faksi, kamu bisa memunculkan NPC unik yang terinspirasi dari arketipe berikut: ${backgroundNames}. Beri mereka nama dan peran yang sesuai dalam cerita.
 
         Instruksi Tambahan untuk Bab Ini:
         - Ciptakan narasi yang epik dan bercabang. Manfaatkan mekanik 'check' probabilistik untuk menciptakan momen menegangkan.
@@ -60,7 +62,7 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
         - Reputasi Faksi: ${reputation}
         - Lokasi Saat Ini: ${gameState.currentLocation}
         - Companion Aktif: ${activeCompanionName}
-        - Companion yang Sudah Direkru
+        - Companion yang Sudah Direkrut: ${recruitedCompanions}
         - Story Flags Aktif: ${JSON.stringify(player.storyFlags)}
 
         Tujuan Bab Ini:
@@ -69,6 +71,20 @@ const generateChapterPrompt = (gameState: GameState, objective: string): string 
         Sekarang, buatkan konten untuk bab yang kaya dan panjang ini dalam format JSON sesuai skema.
     `;
 };
+
+// Helper to clean Gemini's response and extract pure JSON
+const cleanAndParseJson = (rawText: string) => {
+    let cleanedText = rawText.trim();
+    const firstBrace = cleanedText.indexOf('{');
+    const lastBrace = cleanedText.lastIndexOf('}');
+
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
+        return JSON.parse(cleanedText);
+    }
+    // Fallback if the above logic fails, try parsing directly
+    return JSON.parse(rawText);
+}
 
 export const generateChapter = async (gameState: GameState, chapterDetails: { title: string; objective: string }): Promise<Chapter> => {
     const prompt = generateChapterPrompt(gameState, chapterDetails.objective);
@@ -165,9 +181,8 @@ export const generateChapter = async (gameState: GameState, chapterDetails: { ti
                 },
             },
         });
-
-        const jsonText = response.text.trim();
-        const generatedChapter = JSON.parse(jsonText) as Chapter;
+        
+        const generatedChapter = cleanAndParseJson(response.text) as Chapter;
         
         generatedChapter.title = chapterDetails.title;
         generatedChapter.objective = chapterDetails.objective;
@@ -183,6 +198,7 @@ export const generateChapter = async (gameState: GameState, chapterDetails: { ti
 export const generateRandomEvent = async (gameState: GameState): Promise<RandomEvent> => {
     const { player, currentLocation, currentTimeOfDay } = gameState;
     const inventoryList = player.inventory.map(i => `${i.itemId} (x${i.quantity})`).join(', ') || 'kosong';
+    const backgroundNames = Object.values(codex.backgrounds).map(b => b.name).join(', ');
 
     const prompt = `
         Anda adalah Game Master untuk RPG teks NUSA FRACTA. Buat satu event acak yang singkat dan mandiri dalam format JSON.
@@ -202,6 +218,7 @@ export const generateRandomEvent = async (gameState: GameState): Promise<RandomE
         5. 'key' untuk item/musuh/faksi harus valid dari codex (contoh: 'pipa_besi', 'perampok', 'republik_merdeka').
         6. NPC harus terasa hidup, bisa dari faksi yang ada atau warga biasa.
         7. Jaga agar tetap singkat dan fokus. Ini adalah gangguan kecil, bukan misi besar.
+        8. Untuk NPC, kamu bisa menggunakan inspirasi dari arketipe berikut: ${backgroundNames}. Contohnya, buat event bertemu 'Mantan Tentara' yang menawarkan pelatihan, atau 'Teknisi Jalanan' yang butuh bantuan mencari komponen.
     `;
 
     try {
@@ -267,8 +284,7 @@ export const generateRandomEvent = async (gameState: GameState): Promise<RandomE
             }
         });
         
-        const jsonText = response.text.trim();
-        return JSON.parse(jsonText) as RandomEvent;
+        return cleanAndParseJson(response.text) as RandomEvent;
 
     } catch (error) {
         console.error("Error generating random event with Gemini:", error);
