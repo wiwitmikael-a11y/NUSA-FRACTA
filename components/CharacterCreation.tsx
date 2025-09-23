@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store/store';
@@ -200,7 +201,7 @@ const CharacterCreation: React.FC = () => {
                             <img 
                               src={codex.backgrounds[background].portraitUrl} 
                               alt="Potret Karakter" 
-                              className="animated-portrait"
+                              className="character-aura-glow"
                             />
                         </div>
                         <div className="stats-display">
