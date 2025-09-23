@@ -6,6 +6,11 @@ const loadingMessages = [
     "Menyelaraskan takdir...",
     "Memuat sekuens berikutnya...",
     "Memproses konsekuensi...",
+    "Menghitung probabilitas kuantum...",
+    "Membangun reruntuhan...",
+    "Menyebarkan anomali...",
+    "Menghubungi Atharrazka Core...",
+    "Mengkalibrasi ulang realitas...",
 ];
 
 const LoadingOverlay: React.FC = () => {
@@ -13,26 +18,32 @@ const LoadingOverlay: React.FC = () => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        // Cycle through messages every 2.5 seconds
+        // Cycle through messages every 4 seconds for longer loads
         const messageInterval = setInterval(() => {
             setMessage(prevMessage => {
                 const currentIndex = loadingMessages.indexOf(prevMessage);
                 const nextIndex = (currentIndex + 1) % loadingMessages.length;
                 return loadingMessages[nextIndex];
             });
-        }, 2500);
+        }, 4000);
 
-        // Animate the progress bar
+        // Animate the progress bar over a simulated 2-minute duration
+        const totalDuration = 120 * 1000; // 2 minutes in ms
+        const intervalDuration = 200; // update every 200ms
+        const totalSteps = totalDuration / intervalDuration;
+        
         const progressInterval = setInterval(() => {
             setProgress(prev => {
                 if (prev >= 100) {
+                    clearInterval(progressInterval);
                     return 100;
                 }
                 // This simulates a non-linear, more "realistic" loading
-                const increment = Math.random() * 5;
+                // Increment is smaller for a longer duration
+                const increment = (Math.random() * 2) * (100 / totalSteps);
                 return Math.min(prev + increment, 100);
             });
-        }, 100); // Update progress frequently for a smoother look
+        }, intervalDuration);
 
         return () => {
             clearInterval(messageInterval);

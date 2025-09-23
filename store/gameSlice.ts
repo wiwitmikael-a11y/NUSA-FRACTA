@@ -239,11 +239,21 @@ const gameSlice = createSlice({
                 state.player.visitedLocations.push(state.currentLocation);
             }
         },
+        resetGame: (state) => {
+            // Kembali ke state awal, tapi pertahankan beberapa hal
+            // seperti pengaturan, dll. jika disimpan di tempat lain.
+            // Untuk saat ini, reset total.
+            Object.assign(state, initialGameState);
+        },
         loadGame: (state, action: PayloadAction<GameState>) => {
             return {
                 ...action.payload,
-                isLoading: false,
+                isLoading: false, // Pastikan tidak terjebak dalam loading
+                gameStarted: true, // Pastikan game dianggap sudah berjalan
             };
+        },
+        addInfoLog: (state, action: PayloadAction<string>) => {
+            state.eventLog.push({ id: `elog-${Date.now()}`, message: action.payload, type: 'info' });
         },
         setPlayerCharacter: (state, action: PayloadAction<{ name: string; backgroundId: string; skillId: string; attributes: PlayerAttributes }>) => {
             const { name, backgroundId, skillId, attributes } = action.payload;
@@ -569,6 +579,8 @@ export const {
     setNarrativeComplete,
     startGame,
     loadGame,
+    resetGame,
+    addInfoLog,
     setPlayerCharacter,
     closeChapterEndModal,
     setActiveCompanion,

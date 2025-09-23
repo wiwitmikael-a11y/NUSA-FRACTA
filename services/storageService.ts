@@ -23,3 +23,20 @@ export const loadGame = (playerId: string): GameState | null => {
     return null;
   }
 };
+
+export const checkSaveExists = (playerId: string): boolean => {
+    try {
+        return localStorage.getItem(SAVE_GAME_KEY) !== null;
+    } catch (error) {
+        console.error("Failed to check for save game:", error);
+        return false;
+    }
+};
+
+export const deleteSave = (playerId: string): void => {
+    try {
+        localStorage.removeItem(SAVE_GAME_KEY);
+    } catch (error) {
+        console.error("Failed to delete save game:", error);
+    }
+};

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from './store/store';
-import { loadGame as loadGameAction } from './store/gameSlice';
-import { loadGame as loadGameFromStorage } from './services/storageService';
+import { addInfoLog } from './store/gameSlice';
+import { saveGame } from './services/storageService';
 import { useGameSfx } from './hooks/useGameSfx';
 import soundService from './services/soundService';
 
@@ -20,6 +20,7 @@ import ImagePanel from './components/panels/ImagePanel';
 import LoadingOverlay from './components/ui/LoadingOverlay';
 import IntroVideo from './components/IntroVideo';
 import MapUI from './components/ui/MapUI';
+import SettingsUI from './components/ui/SettingsUI';
 
 // Helper hook to get previous value
 function usePrevious<T>(value: T): T | undefined {
@@ -32,13 +33,18 @@ function usePrevious<T>(value: T): T | undefined {
 
 const App: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { gameStarted, isLoading, isChapterEndModalOpen } = useSelector((state: RootState) => state.game);
+    const gameState = useSelector((state: RootState) => state.game);
+    const { gameStarted, isLoading, isChapterEndModalOpen } = gameState;
+    
     const [isInventoryOpen, setInventoryOpen] = useState(false);
     const [isSheetOpen, setSheetOpen] = useState(false);
     const [isJournalOpen, setJournalOpen] = useState(false);
     const [isCraftingOpen, setCraftingOpen] = useState(false);
     const [isMapOpen, setMapOpen] = useState(false);
+    const [isSettingsOpen, setSettingsOpen] = useState(false);
+    const [isCommandMenuOpen, setCommandMenuOpen] = useState(false);
     const [introFinished, setIntroFinished] = useState(false);
+    const commandMenuRef = useRef<HTMLDivElement>(null);
     
     // Initialize game event sound effects hook
     useGameSfx();
@@ -48,16 +54,12 @@ const App: React.FC = () => {
     const prevJournalOpen = usePrevious(isJournalOpen);
     const prevCraftingOpen = usePrevious(isCraftingOpen);
     const prevMapOpen = usePrevious(isMapOpen);
+    const prevSettingsOpen = usePrevious(isSettingsOpen);
 
-    useEffect(() => {
-        const attemptLoad = async () => {
-            const savedGame = await loadGameFromStorage('player1');
-            if (savedGame) {
-                dispatch(loadGameAction(savedGame));
-            }
-        };
-        attemptLoad();
-    }, [dispatch]);
+    const handleSaveGame = () => {
+        saveGame('player1', gameState);
+        dispatch(addInfoLog('Game berhasil disimpan.'));
+    };
 
     // Global UI sound effects
     useEffect(() => {
@@ -66,9 +68,19 @@ const App: React.FC = () => {
                 soundService.playSfx('uiClick');
             }
         };
-        // Use capture phase to ensure sound plays even if the event is stopped
         document.addEventListener('click', handleClick, true);
         return () => document.removeEventListener('click', handleClick, true);
+    }, []);
+
+     // Close command menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (commandMenuRef.current && !commandMenuRef.current.contains(event.target as Node)) {
+                setCommandMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     // Modal open sound effect
@@ -77,11 +89,12 @@ const App: React.FC = () => {
             (isSheetOpen && !prevSheetOpen) ||
             (isJournalOpen && !prevJournalOpen) ||
             (isCraftingOpen && !prevCraftingOpen) ||
-            (isMapOpen && !prevMapOpen)
+            (isMapOpen && !prevMapOpen) ||
+            (isSettingsOpen && !prevSettingsOpen)
             ) {
             soundService.playSfx('uiOpen');
         }
-    }, [isInventoryOpen, isSheetOpen, isJournalOpen, isCraftingOpen, isMapOpen, prevInventoryOpen, prevSheetOpen, prevJournalOpen, prevCraftingOpen, prevMapOpen]);
+    }, [isInventoryOpen, isSheetOpen, isJournalOpen, isCraftingOpen, isMapOpen, isSettingsOpen, prevInventoryOpen, prevSheetOpen, prevJournalOpen, prevCraftingOpen, prevMapOpen, prevSettingsOpen]);
 
     if (!introFinished) {
         return <IntroVideo onFinished={() => setIntroFinished(true)} />;
@@ -95,12 +108,19 @@ const App: React.FC = () => {
         <div className="app-container">
             <header className="app-header">
                 <StatusHUD />
-                <nav>
-                    <button onClick={() => setMapOpen(true)}>Peta</button>
-                    <button onClick={() => setJournalOpen(true)}>Jurnal</button>
-                    <button onClick={() => setCraftingOpen(true)}>Racik</button>
-                    <button onClick={() => setSheetOpen(true)}>Karakter</button>
-                    <button onClick={() => setInventoryOpen(true)}>Inventaris</button>
+                <nav ref={commandMenuRef}>
+                    <button className="command-menu-button" onClick={() => setCommandMenuOpen(prev => !prev)}>
+                        Akses Terminal
+                    </button>
+                    <div className={`command-menu-dropdown ${isCommandMenuOpen ? 'open' : ''}`}>
+                        <button onClick={() => { handleSaveGame(); setCommandMenuOpen(false); }}>Simpan</button>
+                        <button onClick={() => { setMapOpen(true); setCommandMenuOpen(false); }}>Peta</button>
+                        <button onClick={() => { setJournalOpen(true); setCommandMenuOpen(false); }}>Jurnal</button>
+                        <button onClick={() => { setCraftingOpen(true); setCommandMenuOpen(false); }}>Racik</button>
+                        <button onClick={() => { setSheetOpen(true); setCommandMenuOpen(false); }}>Karakter</button>
+                        <button onClick={() => { setInventoryOpen(true); setCommandMenuOpen(false); }}>Inventaris</button>
+                        <button onClick={() => { setSettingsOpen(true); setCommandMenuOpen(false); }}>Pengaturan</button>
+                    </div>
                 </nav>
             </header>
             
@@ -120,6 +140,7 @@ const App: React.FC = () => {
             <JournalUI isOpen={isJournalOpen} onClose={() => setJournalOpen(false)} />
             <CraftingUI isOpen={isCraftingOpen} onClose={() => setCraftingOpen(false)} />
             <MapUI isOpen={isMapOpen} onClose={() => setMapOpen(false)} />
+            <SettingsUI isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} />
             <ChapterEndSummary isOpen={isChapterEndModalOpen} />
         </div>
     );

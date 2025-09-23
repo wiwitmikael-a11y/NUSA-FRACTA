@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store/store';
-import { startGame, setPlayerCharacter, generateAndStartChapter } from '../store/gameSlice';
+import { startGame, setPlayerCharacter, generateAndStartChapter, loadGame as loadGameAction } from '../store/gameSlice';
 import { codex } from '../core/codex';
 import { PlayerAttributes } from '../types';
 import soundService from '../services/soundService';
+import { checkSaveExists, loadGame } from '../services/storageService';
 
 const randomNames = ['Bayu', 'Citra', 'Dharma', 'Elang', 'Gita', 'Harun', 'Rin', 'Jaka'];
 
@@ -44,6 +45,11 @@ const CharacterCreation: React.FC = () => {
     const [name, setName] = useState('');
     const [background, setBackground] = useState('');
     const [skill, setSkill] = useState('');
+    const [saveExists, setSaveExists] = useState(false);
+
+    useEffect(() => {
+        setSaveExists(checkSaveExists('player1'));
+    }, []);
 
     const displayAttributes = useMemo(() => {
         const baseAttributes: PlayerAttributes = { kekuatan: 5, ketangkasan: 5, kecerdasan: 5, karisma: 5 };
@@ -68,12 +74,20 @@ const CharacterCreation: React.FC = () => {
         return baseAttributes;
     }, [background, skill]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleLoadGame = () => {
+        const savedGame = loadGame('player1');
+        if (savedGame) {
+            soundService.initialize(); // Ensure audio is ready
+            dispatch(loadGameAction(savedGame));
+            soundService.playBgm('explore');
+        }
+    };
+
+    const handleNewGame = (e: React.FormEvent) => {
         e.preventDefault();
         
-        // Inisialisasi audio pada interaksi pengguna pertama untuk memastikan izin browser
-        soundService.initialize();
-
+        soundService.initialize(); // Ensure audio is ready before starting BGM
+        
         // 1. Tentukan pilihan final (pilihan pengguna atau acak)
         const finalName = name.trim() || randomNames[Math.floor(Math.random() * randomNames.length)];
         
@@ -119,8 +133,6 @@ const CharacterCreation: React.FC = () => {
         }));
         
         dispatch(startGame());
-
-        // Mulai musik latar setelah game dimulai
         soundService.playBgm('explore');
 
         // Kirim thunk async untuk menghasilkan bab pertama
@@ -132,9 +144,19 @@ const CharacterCreation: React.FC = () => {
 
     return (
         <div className="character-creation-container">
-            <h1>Buat Karakter</h1>
-            <p>Selamat datang di NUSA FRACTA. Bertahan hidup tidak akan mudah. Siapakah dirimu?</p>
-            <form onSubmit={handleSubmit}>
+            <h1>NUSA FRACTA</h1>
+            <p>Selamat datang kembali di reruntuhan. Takdir menantimu.</p>
+            
+            {saveExists && (
+                <div className="form-group">
+                    <button onClick={handleLoadGame} className="submit-button">
+                        Lanjutkan Petualangan
+                    </button>
+                </div>
+            )}
+
+            <form onSubmit={handleNewGame}>
+                 <h3 style={{marginTop: '2rem', textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '2rem'}}>Atau, Mulai Petualangan Baru</h3>
                 <div className="form-group">
                     <label htmlFor="name">Nama:</label>
                     <input
@@ -189,7 +211,6 @@ const CharacterCreation: React.FC = () => {
                                 {Object.entries(displayAttributes).map(([key, value]) => (
                                     <li key={key}>
                                         <span>{key}</span>
-                                        {/* FIX: The value from Object.entries is inferred as 'unknown', which is not assignable to 'number'. Cast 'value' to 'number' to fix the TypeScript error. */}
                                         <span className={`attr-value ${getAttributeValueClass(value as number)}`}>{value as number}</span>
                                     </li>
                                 ))}
@@ -198,7 +219,9 @@ const CharacterCreation: React.FC = () => {
                     </div>
                 )}
 
-                <button type="submit" className="submit-button">Mulai Petualangan</button>
+                <button type="submit" className="submit-button">
+                    {saveExists ? 'Mulai Game Baru' : 'Mulai Petualangan'}
+                </button>
                 
                 <div className="disclaimer-container">
                     <p className="disclaimer-text">

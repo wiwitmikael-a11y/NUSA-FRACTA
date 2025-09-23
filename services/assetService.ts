@@ -7,6 +7,17 @@ const PORTRAIT_BASE_URL = 'https://raw.githubusercontent.com/wiwitmikael-a11y/nu
 
 type AssetKey = keyof typeof assetManifest.backgrounds;
 
+/**
+ * Normalizes a location name by taking the part before the first comma.
+ * Example: "Jalan Jenderal Sudirman, Area Pusat" becomes "Jalan Jenderal Sudirman".
+ * @param location The full location string.
+ * @returns The normalized location string.
+ */
+export const normalizeLocationName = (location: string): string => {
+    return location.split(',')[0].trim();
+};
+
+
 // Peta yang diperluas untuk mencocokkan lokasi spesifik dengan kategori gambar.
 const locationToAssetKey: { [key: string]: AssetKey } = {
     // Exact matches updated to new keys
@@ -147,10 +158,11 @@ const getRandomImage = (imageArray: string[]): string | null => {
 };
 
 export const getImageUrlForLocation = (location: string): string | null => {
-    let key: AssetKey | undefined = locationToAssetKey[location];
+    const normalizedLocation = normalizeLocationName(location);
+    let key: AssetKey | undefined = locationToAssetKey[normalizedLocation];
 
     if (!key) {
-        const lowerLocation = location.toLowerCase();
+        const lowerLocation = normalizedLocation.toLowerCase();
         const sortedKeywords = Object.keys(keywordToAssetKey).sort((a, b) => b.length - a.length);
         
         for (const keyword of sortedKeywords) {
